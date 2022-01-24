@@ -24,8 +24,7 @@ There are four participants in a LaunchPad Crowdsales Protocol, the Campaign Cre
 The HighEnd LaunchPad Protocol lets teams/projects/campaigns achieve two (2) major goals at once, it raises money, and and sell their tokens to the public.
 The protocol uses `MultiCurrency` to let the Campaign Creator choose which currency to raise/sell their tokens for. Therefore,  Campaign Creator can choose to raise funds in any currency available on the chain.
 
-There is a minimum raise that must be made and that is the softcap, it is required by the protocol. The HardCap (Goal) is then set by the Campaign
-Creator, and the Period (campaign period - amount of blocks a campaign should stay active) is also set by the Campaign Creator.
+There is a minimum raise that must be made and that is the softcap, it is required by the protocol. The HardCap (Goal) is then set by the Campaign Creator, and the Period (campaign period - amount of blocks a campaign should stay active) is also set by the Campaign Creator.
 
 ### The Lifecycle of a Campaign
 
