@@ -7,7 +7,7 @@
         "projectWebsite": "Vec<u8>",
         "beneficiary": "AccountId",
         "raiseCurrency": "CurrencyId",
-        "salesToken": "CurrencyId",
+        "saleToken": "CurrencyId",
         "crowdAllocation": "Balance"
         "goal": "Balance"
         "period": "BlockNumber"
@@ -28,5 +28,5 @@
         "accountId": "AccountId",
         "contribution": "Balance"
         "allocation": "Balance"
-    },
+    }
 }
