@@ -13,8 +13,7 @@ use frame_support::{
 	pallet_prelude::*, transactional, PalletId, traits::Get, codec::{Decode, Encode}, ensure, storage::child,
 };
 use frame_system::{pallet_prelude::*, ensure_signed};
-use orml_traits::{GetByKey, Get, MultiCurrency, MultiCurrencyExtended, MultiReservableCurrency};
-use primitives::{AccountId, Balance, CampaignId, CurrencyId};
+use orml_traits::{GetByKey, MultiCurrency, MultiCurrencyExtended, MultiReservableCurrency};
 use sp_std::vec::Vec;
 use sp_runtime::{traits::{AccountIdConversion, Saturating, Zero, Hash}};
 mod mock;
@@ -100,6 +99,7 @@ pub mod module {
 
 		/// The minimum amount that must be raised in a crowdsales campaign.
         /// Campaign Goal must be at least this amount.
+		/// If this amount is not met, the proposal can be updated by the proposer or will be rejected.
 		type MinRaise: Get<BalanceOf<Self>>;
 
 		/// The minimum amount that may be contributed into a crowdfund. Should almost certainly be at
@@ -107,12 +107,15 @@ pub mod module {
 		type MinContribution: Get<BalanceOf<Self>>;
 
 		/// The maximum number of proposals that could be running at any given time.
-		type MaxProposals: Get<Self::BlockNumber>;
+		/// If set to 0, proposals are disabled and the Module will panic if a proposal is made.
+		type MaxProposalsCount: Get<u32>;
 
 		/// The maximum number of campaigns that could be running at any given time.
-		type MaxCampaigns: Get<Self::BlockNumber>;
+		/// If set to 0, campaigns are disabled and the Module will panic if a campaign is made.
+		type MaxCampaignsCount: Get<u32>;
 
 		/// The maximum period of time (in blocks) that a crowdfund campaign clould be active.
+		/// If set to 0, active period is disabled and the Module will panic if a campaign is activated.
 		type MaxActivePeriod: Get<Self::BlockNumber>;
 
 		/// The period of time (number of blocks) a campaign has to wait after being Approved by governance.
