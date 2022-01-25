@@ -223,7 +223,7 @@ pub mod module {
 	///
 	/// TotalAmountRaisedInProtocol: map CurrencyIdOf<T> => Balance
 	#[pallet::storage]
-	#[pallet::getter(fn total_collateral_in_auction)]
+	#[pallet::getter(fn total_amount_raised_in-protocol)]
 	pub type TotalAmountRaisedInProtocol<T: Config> = StorageMap<_, Twox64Concat, CurrencyIdOf<T>, BalanceOf<T>, ValueQuery>;
 
 	/// Record of the total number of successful campaigns done in the protocol.
