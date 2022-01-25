@@ -105,8 +105,6 @@ pub trait Campaign<AccountId, BlockNumber> {
 	) -> OnNewContributionResult<BlockNumber>;
 	/// End a Campaign when hard cap (goal) is reached.
 	fn on_campaign_ended(id: CampaignId, winner: Option<(AccountId, Balance)>);
-    /// Get the total number of Campaigns in the system.
-	fn get_campaigns() -> u32;
 }
 
 /// The result of Campaign handling.
@@ -150,6 +148,4 @@ pub trait Proposal<AccountId, BlockNumber> {
 	) -> OnNewProposalResult<BlockNumber>;
 	/// End a Campaign when hard cap (goal) is reached.
 	fn on_campaign_ended(id: CampaignId, winner: Option<(AccountId, Balance)>);
-     /// Get the total number of Proposals in the system.
-     fn get_proposals() -> u32;
 }
