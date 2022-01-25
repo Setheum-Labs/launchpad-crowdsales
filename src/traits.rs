@@ -38,10 +38,12 @@ pub struct CampaignInfo<AccountId, BlockNumber> {
 	sale_token: CurrencyId,
 	/// Crowdsale Token amount for sale
 	#[codec(compact)]
-	crowd_allocaton: Balance,
+	crowd_allocation: Balance,
 	/// The Fundraise Goal - HardCap
 	#[codec(compact)]
 	goal: Balance,
+	#[codec(compact)]
+	raised: Balance,
 	/// The period that the campaign runs for.
 	period: BlockNumber,
 	/// Is the campaign approved?
