@@ -48,23 +48,6 @@ pub struct CampaignInfo<AccountId, BlockNumber> {
 	is_approved: Bool,
 }
 
-/// The result of Campaign handling.
-pub struct OnNewCampaignResult<BlockNumber> {
-	/// Indicates if the contribution was accepted.
-	pub dispatch_campaign: bool,
-	/// The new amount of tokens allocated to the contributor.
-	pub starting_period: Change<Option<BlockNumber>>,
-}
-
-/// The result of Campaign handling.
-pub struct OnNewContributionResult<BlockNumber> {
-	/// Indicates if the contribution was accepted.
-	pub accept_contribution: bool,
-	/// The new amount of tokens allocated to the contributor.
-	pub token_allocation: Balance,
-}
-
-
 /// Abstraction over th Launchpad Campaign system.
 pub trait Campaign<AccountId, BlockNumber> {
 	/// The id of a CampaignInfo
@@ -82,18 +65,11 @@ pub trait Campaign<AccountId, BlockNumber> {
 	fn update_campaign(id: Self::CampaignId, info: CampaignInfo<AccountId, Self::Balance, BlockNumber>) -> DispatchResult;
 	/// Remove Campaign by `id`
 	fn remove_campaign(id: Self::CampaignId);
-    /// Get the total amount of funds raised for the campaign.
-	fn get_total_raised_in_campaign(id: Self::CampaignId) -> Self::Balance;
-    /// Get the total amount of tokens sold for the campaign.
-	fn get_total_sold_in_campaign(id: Self::CampaignId) -> Self::Balance;
-	/// Called when a new campaign is received.
-	/// The return value determines if the campaign schedule should be dispatched and 
-    /// update the starting period of the campaign.
-	fn on_campaign(
+	fn on_start_campaign(
 		now: BlockNumber,
 		id: CampaignId,
 		info: CampaignInfo<AccountId, Self::Balance, BlockNumber>,
-	) -> OnNewCampaignResult<BlockNumber>;
+	) -> DispatchResult;
 	/// Called when a contribution is received.
 	/// The return value determines if the contribution should be accepted and 
     /// update the amount of tokens allocated to the contributor.
@@ -102,17 +78,7 @@ pub trait Campaign<AccountId, BlockNumber> {
 		now: BlockNumber,
 		id: CampaignId,
 		contribution: (AccountId, Balance),
-	) -> OnNewContributionResult<BlockNumber>;
-	/// End a Campaign when hard cap (goal) is reached.
-	fn on_campaign_ended(id: CampaignId, winner: Option<(AccountId, Balance)>);
-}
-
-/// The result of Campaign handling.
-pub struct OnNewProposalResult<BlockNumber> {
-	/// Indicates if the proposal is valid.
-	pub valid_proposal: bool,
-	/// The new amount of tokens allocated to the contributor.
-	pub token_allocation: Balance,
+	) -> DispatchResult;
 }
 
 /// Abstraction over th Launchpad Proposal system.
@@ -145,7 +111,5 @@ pub trait Proposal<AccountId, BlockNumber> {
 		now: BlockNumber,
 		id: CampaignId,
 		info: CampaignInfo<AccountId, Self::Balance, BlockNumber>,
-	) -> OnNewProposalResult<BlockNumber>;
-	/// End a Campaign when hard cap (goal) is reached.
-	fn on_campaign_ended(id: CampaignId, winner: Option<(AccountId, Balance)>);
+	) -> DispatchResult;
 }
