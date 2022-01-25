@@ -161,18 +161,48 @@ pub mod module {
 	
 	/// Info on all of the proposed campaigns.
 	///
-	/// map ProposalIndex => CampaignInfoOf<T>
+	/// map CampaignIdOf<T> => CampaignInfoOf<T>
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
-	pub type Proposals<T: Config> = StorageMap<_, Blake2_128Concat, ProposalIndex, CampaignInfoOf<T>, OptionQuery>;
+	pub type Proposals<T: Config> = StorageMap<_, Blake2_128Concat, CampaignIdOf<T>, CampaignInfoOf<T>, OptionQuery>;
 	
 	/// Info on all of the approved campaigns.
 	///
-	/// map CampaignIndex => CampaignInfoOf<T>
+	/// map CampaignIdOf<T> => CampaignInfoOf<T>
 	#[pallet::storage]
 	#[pallet::getter(fn campaigns)]
-	pub type Campaigns<T: Config> = StorageMap<_, Blake2_128Concat, CampaignIndex, CampaignInfoOf<T>, OptionQuery>;
+	pub type Campaigns<T: Config> = StorageMap<_, Blake2_128Concat, CampaignIdOf<T>, CampaignInfoOf<T>, OptionQuery>;
 	
+	/// Record of all the contributions made to a campaign by contributors
+	/// under campaign_id. campaign_id => contributor_account_id, (contribution_amount, allocation_amount)
+	///
+	/// map CampaignIdOf<T> => AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>)
+	#[pallet::storage]
+	#[pallet::getter(fn campaigns)]
+	pub type Contributions<T: Config> = 
+		StorageDoubleMap<_, Twox64Concat, CampaignIdOf<T>, Twox64Concat, AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>), OptionQuery>;
+	
+	/// Record of the total amount of funds raised by a specific campaign.
+	///
+	/// TotalAmountRaisedInCampaign: map CampaignId => Balance
+	#[pallet::storage]
+	#[pallet::getter(fn total_amount_raised_in_campaign)]
+	pub type TotalAmountRaisedInCampaign<T: Config> = StorageMap<_, Twox64Concat, CampaignIdOf<T>, BalanceOf<T>, ValueQuery>;
+
+	/// Record of the total amount of funds raised under a specific currency.
+	///
+	/// TotalAmountRaisedInProtocol: map CurrencyIdOf<T> => Balance
+	#[pallet::storage]
+	#[pallet::getter(fn total_collateral_in_auction)]
+	pub type TotalAmountRaisedInProtocol<T: Config> = StorageMap<_, Twox64Concat, CurrencyIdOf<T>, BalanceOf<T>, ValueQuery>;
+
+	/// Record of the total number of successful campaigns done in the protocol.
+	///
+	/// TotalSuccessfulCampaigns: map u32;
+	#[pallet::storage]
+	#[pallet::getter(fn total_successful_campaigns)]
+	pub type TotalSuccessfulCampaigns<T: Config> = StorageMap<_, u32, ValueQuery>;
+
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
 
@@ -226,8 +256,6 @@ impl<T: Config> Campaign<T::AccountId, T::BlockNumber> for Pallet<T> {
 	) -> OnNewContributionResult<BlockNumber>;
 	/// End a Campaign when hard cap (goal) is reached.
 	fn on_campaign_ended(id: CampaignId, winner: Option<(AccountId, Balance)>);
-    /// Get the total number of Campaigns in the system.
-	fn get_campaigns() -> u32;
 }
 
 impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
@@ -262,6 +290,4 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	) -> OnNewProposalResult<BlockNumber>;
 	/// End a Campaign when hard cap (goal) is reached.
 	fn on_campaign_ended(id: CampaignId, winner: Option<(AccountId, Balance)>);
-     /// Get the total number of Proposals in the system.
-     fn get_proposals() -> u32;
 }
