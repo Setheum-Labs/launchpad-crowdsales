@@ -29,17 +29,13 @@ pub use module::*;
 /// Simple index for identifying a fund.
 pub type FundIndex = u32;
 pub type ProposalIndex = u32;
+pub type CampaignId = u32;
 pub type CampaignIndex = u32;
 
 type AccountIdOf<T> = <T as frame_system::Config>::AccountId;
 type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 type CurrencyIdOf<T> =
 	<<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
-type CampaignInfoOf<T> =
-	CampaignInfo<AccountIdOf<T>, BalanceOf<T>, <T as frame_system::Config>::BlockNumber>;
-type CampaignInfoOf<T> =
-	CampaignInfo<AccountIdOf<T>, BalanceOf<T>, <T as frame_system::Config>::BlockNumber>;
-
 #[frame_support::pallet]
 pub mod module {
 	use super::*;
@@ -55,9 +51,6 @@ pub mod module {
 		/// Native currency_id.
 		/// 
 		type GetNativeCurrencyId: Get<CurrencyId>;
-
-		/// Campaign to manage the Crowdsales process
-		type Crowdsales: Crowdsales<Self::AccountId, Self::BlockNumber, CampaignId = CampaignId, Balance = Balance>;
 
 		/// The Campaign Commission rate taken from successful campaigns
 		/// The Treasury Commission is transferred to the Network's Treasury account.
@@ -92,8 +85,8 @@ pub mod module {
 		/// If set to 0, active period is disabled and the Module will panic if a campaign is activated.
 		type MaxActivePeriod: Get<Self::BlockNumber>;
 
-		/// The period of time (number of blocks) a campaign has to wait after being Approved by governance.
-		type WaitingPeriod: Get<Self::BlockNumber>;
+		/// The period of time (number of blocks) a campaign is delayed after being Approved by governance.
+		type CampaignStartDelay: Get<Self::BlockNumber>;
 
 		/// The period of time (in blocks) after an unsuccessful crowdfund ending during which
 		/// contributors are able to withdraw their funds. After this period, their funds are lost.
@@ -136,116 +129,99 @@ pub mod module {
 		CampaignNotSuccessful,
 		/// Wrong Currency Type in use.
 		InvalidCurrencyType,
+		/// Campaign Id unavailable.
+		NoAvailableCampaignId,
+		/// Proposal is not in the list of proposals.
+		ProposalNotFound,
+		/// Campaign is not in the list of campaigns.
+		CampaignNotFound,
+		/// Proposal is already approved.
+		ProposalAlreadyApproved,
+		/// Contributors balance is not enough to contribute
+		ContributionNotEnoughBalance,
 
 	#[pallet::event]
 	#[pallet::generate_deposit(pub(crate) fn deposit_event)]
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", CurrencyId = "CurrencyId")]
 	pub enum Event<T: Config> {
-		/// Created Proposal \[campaign_id, campaign_info\]
-		CreatedProposal(CampaignIdOf<T>, CampaignInfo<Of>),
+		/// Created Proposal \[campaign_id\]
+		CreatedProposal(T::CampaignId),
 		/// Rejected Proposal \[campaign_id\]
-		RejectedProposal(CampaignIdOf<T>),
-		/// Approved Proposal \[campaign_id, campaign_info, now\]
-		ApprovedProposal(CampaignIdOf<T>, CampaignInfo<Of>, <T as frame_system::Config>::BlockNumber),
-		/// Campaign Started \[campaign_id, campaign_info, now\]
-		StartedCampaign(CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
-		/// Ended Campaign Successfully \[campaign_id, campaign_info, now\]
-		EndedCampaignSuccessful(CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
-		/// Ended Campaign Unsuccessfully \[campaign_id, campaign_info, now\]
-		EndedCampaignUnsuccessful(CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
-		/// Contributed to Campaign \[campaign_id, campaign_info, now\]
-		ContributedToCampaign(CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
-		/// Claimed Funds Raised \[claimant_account_id, campaign_id, campaign_info, now\]
-		ClaimedFundraise(AccountIdOf<T>, CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
-		/// Claimed Contribution Allocation \[claimant_account_id, campaign_id, campaign_info, now\]
-		ClaimedAllocation(AccountIdOf<T>, CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
-		/// Dissolved Unclaimed Funds \[amount, campaign_id, campaign_info, now\]
-		DissolvedFunds(BalanceOf<T>, CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
-		/// Dispensed Commissions \[amount, campaign_id, campaign_info, now\]
-		DispensedCommissions(BalanceOf<T>, CampaignIdOf<T>, CampaignInfo, <T as frame_system::Config>::BlockNumber),
+		RejectedProposal(T::CampaignId),
+		/// Approved Proposal \[campaign_id\]
+		ApprovedProposal(T::CampaignId),
+		/// Campaign Started \[campaign_id\]
+		StartedCampaign(T::CampaignId),
+		/// Ended Campaign Successfully \[campaign_id, campaign_info\]
+		EndedCampaignSuccessful(T::CampaignId),
+		/// Ended Campaign Unsuccessfully \[campaign_id, campaign_info\]
+		EndedCampaignUnsuccessful(T::CampaignId),
+		/// Contributed to Campaign \[campaign_id, contribution_amount\]
+		ContributedToCampaign(T::CampaignId, BalanceOf<T>),
+		/// Claimed Funds Raised \[claimant_account_id, campaign_id, amount_claimed\]
+		ClaimedFundraise(AccountIdOf<T>, T::CampaignId, BalanceOf<T>),
+		/// Claimed Contribution Allocation \[claimant_account_id, campaign_id, allocation_claimed\]
+		ClaimedAllocation(AccountIdOf<T>, T::CampaignId, BalanceOf<T>),
+		/// Dissolved Unclaimed Funds \[amount, campaign_id, now\]
+		DissolvedFunds(BalanceOf<T>, T::CampaignId, <T as frame_system::Config>::BlockNumber),
+		/// Dispensed Commissions \[amount, campaign_id, now\]
+		DispensedCommissions(BalanceOf<T>, T::CampaignId, <T as frame_system::Config>::BlockNumber),
 	}
 	
 	/// Info on all of the proposed campaigns.
 	///
-	/// map CampaignIdOf<T> => CampaignInfoOf<T>
+	/// map T::CampaignId => CampaignInfoOf<T>
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
 	pub type Proposals<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
-		CampaignIdOf<T>,
+		T::CampaignId,
 		BoundedVec<CampaignInfoOf<T>, T::MaxProposals>,
 		OptionQuery
 	>;
 	
 	/// Info on all of the approved campaigns.
 	///
-	/// map CampaignIdOf<T> => CampaignInfoOf<T>
+	/// map T::CampaignId => CampaignInfoOf<T>
 	#[pallet::storage]
 	#[pallet::getter(fn campaigns)]
 	pub type Campaigns<T: Config> = StorageMap<
 		_,
 		Blake2_128Concat,
-		CampaignIdOf<T>,
+		T::CampaignId,
 		BoundedVec<CampaignInfoOf<T>, T::MaxActiveCampaigns>,
 		OptionQuery
 	>;
 	
-	/// Index Campaigns by start time.
+	// Track the next campaign id to be used.
 	#[pallet::storage]
-	#[pallet::getter(fn campaign_start_time)]
-	pub type CampaignStartTime<T: Config> =
-		StorageDoubleMap<_, Twox64Concat, T::BlockNumber, Blake2_128Concat, CampaignIdOf<T>, (), OptionQuery>;
-
-	/// Index Campaigns by end time.
-	#[pallet::storage]
-	#[pallet::getter(fn campaign_end_time)]
-	pub type CampaignEndTime<T: Config> =
-		StorageDoubleMap<_, Twox64Concat, T::BlockNumber, Blake2_128Concat, CampaignIdOf<T>, (), OptionQuery>;
+	#[pallet::getter(fn campaign_index)]
+	pub type CampaignsIndex<T: Config> = StorageMap<_, T::CampaignId, ValueQuery>;
 
 	/// Record of all the contributions made to a campaign by contributors
 	/// under campaign_id. campaign_id => contributor_account_id, (contribution_amount, allocation_amount)
 	///
-	/// map CampaignIdOf<T> => AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>)
+	/// map T::CampaignId => AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>)
 	#[pallet::storage]
 	#[pallet::getter(fn campaigns)]
 	pub type Contributions<T: Config> = 
-		StorageDoubleMap<_, Twox64Concat, CampaignIdOf<T>, Twox64Concat, AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>), OptionQuery>;
+		StorageDoubleMap<_, Twox64Concat, T::CampaignId, Twox64Concat, AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>), OptionQuery>;
 	
-	/// Record of the total amount of funds raised by a specific campaign.
+	/// Record of the total amount of funds raised in the protocol
+	///  under a specific currency_id. currency_id => total_raised
 	///
-	/// TotalAmountRaisedInCampaign: map CampaignId => Balance
-	#[pallet::storage]
-	#[pallet::getter(fn total_amount_raised_in_campaign)]
-	pub type TotalAmountRaisedInCampaign<T: Config> = StorageMap<_, Twox64Concat, CampaignIdOf<T>, BalanceOf<T>, ValueQuery>;
-
-	/// Record of the total amount of funds raised under a specific currency.
-	///
-	/// TotalAmountRaisedInProtocol: map CurrencyIdOf<T> => Balance
+	/// TotalAmountRaised: map CurrencyIdOf<T> => BalanceOf<T>
 	#[pallet::storage]
 	#[pallet::getter(fn total_amount_raised_in-protocol)]
-	pub type TotalAmountRaisedInProtocol<T: Config> = StorageMap<_, Twox64Concat, CurrencyIdOf<T>, BalanceOf<T>, ValueQuery>;
+	pub type TotalAmountRaised<T: Config> = StorageMap<_, Twox64Concat, CurrencyIdOf<T>, BalanceOf<T>, ValueQuery>;
 
 	/// Record of the total number of successful campaigns done in the protocol.
 	///
-	/// TotalSuccessfulCampaigns: map u32;
+	/// SuccessfulCampaigns: map u32;
 	#[pallet::storage]
 	#[pallet::getter(fn total_successful_campaigns)]
-	pub type TotalSuccessfulCampaigns<T: Config> = StorageMap<_, CampaignIdOf<T>, ValueQuery>;
-
-	/// Record of the total number of successful campaigns done in the protocol.
-	///
-	/// TotalSuccessfulCampaigns: map u32;
-	#[pallet::storage]
-	#[pallet::getter(fn campaign_index)]
-	pub type CampaignsIndex<T: Config> = StorageMap<_, CampaignIdOf<T>, ValueQuery>;
-
-	/// Record of the total number of successful campaigns done in the protocol.
-	///
-	/// TotalSuccessfulCampaigns: map u32;
-	#[pallet::storage]
-	#[pallet::getter(fn proposal_index)]
-	pub type ProposalsIndex<T: Config> = StorageMap<_, CampaignIdOf<T>, ValueQuery>;
+	pub type SuccessfulCampaigns<T: Config> = StorageMap<_, T::CampaignId, ValueQuery>;
 
 	#[pallet::pallet]
 	pub struct Pallet<T>(PhantomData<T>);
@@ -312,38 +288,56 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 			goal: goal,
 			raised: Zero::zero(),
 			period: period,
+			campaign_start: <system::Pallet<T>>::block_number(),
 			is_approved: false,
 		}]
 		.try_into()
 		.expect("Max proposals exceeded");
-		let campaign_id = 
 
+		let campaign_id = <CampaignsIndex<T>>::try_mutate(|idx| -> sp_std::result::Result<Self::CampaignId, DispatchError> {
+			let id = *idx;
+			ensure!(id != CampaignId::max_value(), Error::<T>::NoAvailableCampaignId);
+			*idx += CampaignId::one();
+			Ok(id)
+		});
+
+		// Try check available balance for Submission Deposit
 		assert!(
 			T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &who) >= T::SubmissionDeposit::get(),
 			"Account do not have enough balance for Submission Deposit"
 		);
-		if T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), who, T::SubmissionDeposit::get()).is_ok() {
+		// Try check available balance for Crowd Allocation
+		assert!(
+			T::MultiCurrency::free_balance(sale_token, &who) >= crowd_allocation,
+			"Account do not have enough balance for Crowd Allocation"
+		);
+
+		// Initiate the Proposal
+		if T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), who, T::SubmissionDeposit::get()).is_ok() &&
+			T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, sale_token, who, crowd_allocation).is_ok() {
 			CampaignInfo::<T>::insert(campaign_id, bounded_proposal);
 		}
 	}
+
     /// Approve Proposal by `id` at `now`.
     fn approve_proposal(
-        now: BlockNumber,
         id: CampaignId,
-    );
-	/// Reject Proposal by `id`
-	fn reject_proposal(id: Self::CampaignId);
-    /// Remove Proposal by `id`
-    fn remove_proposal(id: Self::CampaignId);
-	/// Called when a new proposal is received.
-	/// The return value determines if the proposal is valid and 
-    /// update the amount of tokens allocated to the contributor.
-	/// Implementation should reserve the funds from the contributor.
-	fn on_proposal(
-		now: BlockNumber,
-		id: CampaignId,
-		info: CampaignInfo<AccountId, Self::Balance, BlockNumber>,
-	) -> DispatchResult;
+    ) {
+		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
+		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
+		proposal.is_approved = true;
+		proposal.campaign_start = <system::Pallet<T>>::block_number() + T::CampaignStartDelay::get();
+
+		Self::proposals(id).remove();
+		Self::campaigns(id).put(proposal);
+	}
+	
+	/// Reject Proposal by `id` and remove from dtorage
+	fn reject_proposal(id: Self::CampaignId) {
+		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
+		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
+		Self::proposals(id).remove();
+	}
 }
 
 impl<T: Config> Campaign<T::AccountId, T::BlockNumber> for Pallet<T> {
@@ -352,32 +346,58 @@ impl<T: Config> Campaign<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// The currency type used for the campaign.
     type CurrencyId: u32;
     /// The balance type of a currency.
-	type 
+	type Balance:u32;
 	/// The Campaign info of `id`
-	fn campaign_info(id: Self::CampaignId) -> Option<CampaignInfo<AccountId, Self::Balance, BlockNumber>>;
-	/// Create new Campaign with specific `CampaignInfo`, return the `id` of the `Campaign`
-	fn new_campaign(
-		now: BlockNumber,
-		info: CampaignInfo<AccountId, Self::Balance, BlockNumber>
-	) -> result::Result<Self::CampaignId, DispatchError> {
-
+	fn campaign_info(id: Self::CampaignId) -> Option<CampaignInfo<AccountId, Self::Balance, BlockNumber>> {
+		Self::campaigns(id)
 	}
-	/// Update the Campaign info of `id` with `info`
-	fn update_campaign(id: Self::CampaignId, info: CampaignInfo<AccountId, Self::Balance, BlockNumber>) -> DispatchResult;
-	/// Remove Campaign by `id`
-	fn remove_campaign(id: Self::CampaignId);
-	fn on_start_campaign(
-		now: BlockNumber,
-		id: CampaignId,
-		info: CampaignInfo<AccountId, Self::Balance, BlockNumber>,
-	) -> DispatchResult;
+
+	/// Record Successful Campaign by `id`
+	fn on_successful_campaign(id: Self::CampaignId) {
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		campaign.is_successful = true;
+		Self::successful_campaigns(id).put(campaign);
+	}
+	/// Record Failed Campaign by `id`
+	fn on_failed_campaign(id: Self::CampaignId) {
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		campaign.is_failed = true;
+		Self::campaigns(id).remove();
+	}
 	/// Called when a contribution is received.
 	/// The return value determines if the contribution should be accepted and 
     /// update the amount of tokens allocated to the contributor.
 	/// Implementation should reserve the funds from the contributor.
 	fn on_contribution(
-		now: BlockNumber,
+		who: AccountIdOf<T>,
 		id: CampaignId,
-		contribution: (AccountId, Balance),
-	) -> DispatchResult;
+		contribution: ( AccountIdOf<T>, BalanceOf<T>),
+	) -> DispatchResult {
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		let (who, amount) = contribution;
+
+		ensure!(!campaign.is_failed, Error::<T>::CampaignFailed);
+		ensure!(!campaign.is_successful, Error::<T>::CampaignSuccessful);
+		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
+
+		ensure!(campaign.campaign_start <= <system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
+		ensure!(campaign.period > <system::Pallet<T>>::block_number() - campaign.campaign_start, Error::<T>::CampaignNotActive);
+		
+		ensure!(amount >= T::MinContribution::get(), Error::<T>::ContributionBelowMinimum);
+		ensure!(T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &who) >= amount, Error::<T>::ContributionNotEnough);
+		ensure!(T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), who, amount).is_ok(), Error::<T>::ContributionNotEnoughBalance);
+		campaign.raised += amount;
+		Self::campaigns(id).put(campaign);
+
+		let Some(contribution) = contributions.iter_mut().find(|c| c.who == who);
+		if let Some(contribution) = contribution {
+			contribution.amount += amount;
+		} else {
+			contributions.push(Contribution {
+				who,
+				amount,
+			});
+		}
+		Ok(())
+	}
 }

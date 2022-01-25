@@ -16,6 +16,16 @@ use sp_std::{
 /// Campaign ID
 pub type CampaignId = u32;
 
+/// The auction ID type.
+type CampaignId: Parameter
+		+ Member
+		+ AtLeast32BitUnsigned
+		+ Default
+		+ Copy
+		+ MaybeSerializeDeserialize
+		+ Bounded
+		+ codec::FullCodec;
+
 /// The Structure of a Campaign info.
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, Clone, RuntimeDebug)]
@@ -46,6 +56,8 @@ pub struct CampaignInfo<AccountId, BlockNumber> {
 	raised: Balance,
 	/// The period that the campaign runs for.
 	period: BlockNumber,
+	/// The time when the campaign starts.
+	campaign_start: BlockNumber,
 	/// Is the campaign approved?
 	is_approved: Bool,
 }
@@ -77,7 +89,7 @@ pub trait Campaign<AccountId, BlockNumber> {
     /// update the amount of tokens allocated to the contributor.
 	/// Implementation should reserve the funds from the contributor.
 	fn on_contribution(
-		now: BlockNumber,
+		who: AccountId,
 		id: CampaignId,
 		contribution: (AccountId, Balance),
 	) -> DispatchResult;
@@ -98,20 +110,8 @@ pub trait Proposal<AccountId, BlockNumber> {
 	fn new_proposal(now: BlockNumber, info: CampaignInfo<AccountId, Self::Balance, BlockNumber>) -> result::Result<Self::CampaignId, DispatchError>;
     /// Approve Proposal by `id` at `now`.
     fn approve_proposal(
-        now: BlockNumber,
         id: CampaignId,
     );
-	/// Reject Proposal by `id`
+	/// Reject Proposal by `id` and remove from dtorage
 	fn reject_proposal(id: Self::CampaignId);
-    /// Remove Proposal by `id`
-    fn remove_proposal(id: Self::CampaignId);
-	/// Called when a new proposal is received.
-	/// The return value determines if the proposal is valid and 
-    /// update the amount of tokens allocated to the contributor.
-	/// Implementation should reserve the funds from the contributor.
-	fn on_proposal(
-		now: BlockNumber,
-		id: CampaignId,
-		info: CampaignInfo<AccountId, Self::Balance, BlockNumber>,
-	) -> DispatchResult;
 }
