@@ -12,10 +12,10 @@ use sp_runtime::{
 	traits::{IdentityLookup},
 };
 
-pub type AccountId = AccId;
+pub type AccountId = u128;
+pub type Balance = u64;
 pub type BlockNumber = u64;
-pub type CurrencyId = u64;
-pub type CurrencyId = u64;
+pub type CurrencyId = u32;
 
 // The network Treasury account.
 pub const TREASURY: AccountId = AccountId32::new([0u8; 32]);
@@ -31,6 +31,12 @@ pub const HANA: AccountId = AccountId32::new([8u8; 32]);
 pub const IGOR: AccountId = AccountId32::new([9u8; 32]);
 pub const JOHN: AccountId = AccountId32::new([10u8; 32]);
 
+// The Native currency of the protocol
+pub const NATIVE_COIN: CurrencyId = 0;
+// The Stablecoin of the Protocol
+pub const STABLE_COIN: CurrencyId = 1;
+// The Crowdsale Token
+pub const ICO_COIN: CurrencyId = 1;
 mod crowdsales {
 	pub use super::super::*;
 }
