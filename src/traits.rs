@@ -54,6 +54,9 @@ pub struct CampaignInfo<AccountId, BlockNumber> {
 	raise_currency: CurrencyId,
 	/// Currency type (Token) for crowdsale
 	sale_token: CurrencyId,
+	/// Crowdsale Token Price - Amount of raise_currency per sale_token
+	#[codec(compact)]
+	token_price: Balance,
 	/// Crowdsale Token amount for sale
 	#[codec(compact)]
 	crowd_allocation: Balance,
@@ -120,19 +123,26 @@ pub trait Campaign<AccountId, BlockNumber> {
 
 	/// The Campaign info of `id`
 	fn campaign_info(id: Self::CampaignId) -> Option<CampaignInfo<AccountId, Self::Balance, BlockNumber>>;
-	
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: AccountId,
 		id: CampaignId,
 		contribution: (Self::AccountId, Self::Balance),
 	) -> DispatchResult;
-
+	/// Called when a contribution allocation is claimed
+	fn on_claim_allocation(
+		who: AccountId,
+		id: CampaignId,
+	) -> DispatchResult;
+	/// Called when a campaign's raised fund is claimed
+	fn on_claim_campaign(
+		who: AccountId,
+		id: CampaignId,
+	) -> DispatchResult;
 	/// Ensure that the campaign is still running.
 	fn ensure_valid_campaign(id: Self::CampaignId) -> DispatchResult;
 	/// Record Successful Campaign by `id`
 	fn on_successful_campaign(id: Self::CampaignId);
-
 	/// Record Failed Campaign by `id`
 	fn on_failed_campaign(id: Self::CampaignId);
 }
