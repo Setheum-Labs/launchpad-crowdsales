@@ -22,7 +22,7 @@ mod mock;
 pub mod traits;
 
 pub use traits::{
-	Campaign, CampaignId, CampaignInfo, Proposal,
+	Campaign, CampaignId, CampaignInfo, Contribution, Proposal,
 };
 pub use module::*;
 
@@ -200,13 +200,13 @@ pub mod module {
 	pub type CampaignsIndex<T: Config> = StorageMap<_, T::CampaignId, ValueQuery>;
 
 	/// Record of all the contributions made to a campaign by contributors
-	/// under campaign_id. campaign_id => contributor_account_id, (contribution_amount, allocation_amount)
+	/// under campaign_id. 
 	///
-	/// map T::CampaignId => AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>)
+	/// Contributions: double_map T::CampaignId, AccountIdOf<T> => Contribution
 	#[pallet::storage]
-	#[pallet::getter(fn campaigns)]
+	#[pallet::getter(fn contributions)]
 	pub type Contributions<T: Config> = 
-		StorageDoubleMap<_, Twox64Concat, T::CampaignId, Twox64Concat, AccountIdOf<T>, (BalanceOf<T>, BalanceOf<T>), OptionQuery>;
+		StorageDoubleMap<_, Twox64Concat, T::CampaignId, Twox64Concat, AccountIdOf<T>, Contribution, ValueQuery>;
 	
 	/// Record of the total amount of funds raised in the protocol
 	///  under a specific currency_id. currency_id => total_raised
@@ -260,6 +260,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		beneficiary: AccountIdOf<T>,
 		raise_currency: CurrencyIdOf<T>,
 		sale_token: CurrencyIdOf<T>,
+		token_price: BalanceOf<T>,
 		crowd_allocation: BalanceOf<T>,
 		goal: BalanceOf<T>,
 		period: T::BlockNumber,
@@ -284,12 +285,16 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 			beneficiary: beneficiary,
 			raise_currency: raise_currency,
 			sale_token: sale_token,
+			token_price: token_price,
 			crowd_allocation: crowd_allocation,
 			goal: goal,
 			raised: Zero::zero(),
 			period: period,
 			campaign_start: <system::Pallet<T>>::block_number(),
 			is_approved: false,
+			is_successful: false,
+			is_failed: false,
+			is_ended: false,
 		}]
 		.try_into()
 		.expect("Max proposals exceeded");
@@ -319,10 +324,16 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		}
 	}
 
+	/// Ensure proposal is valid
+	fn ensure_valid_proposal(id: Self::CampaignId) -> result::Result<(), DispatchError> {
+		let proposal = Self::proposals(id);
+		ensure!(proposal.is_some(), Error::<T>::InvalidProposalId);
+		let proposal = proposal.unwrap();
+		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
+		Ok(())
+	}
     /// Approve Proposal by `id` at `now`.
-    fn approve_proposal(
-        id: CampaignId,
-    ) {
+    fn approve_proposal(id: CampaignId) {
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
 		proposal.is_approved = true;
@@ -332,11 +343,18 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		Self::campaigns(id).put(proposal);
 	}
 	
-	/// Reject Proposal by `id` and remove from dtorage
+	/// Reject Proposal by `id` and remove from storage.
 	fn reject_proposal(id: Self::CampaignId) {
+		// Check that the Proposal exists and tag it
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
+		// Ensure that the proposal is not already approved
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
-		Self::proposals(id).remove();
+
+		// Unlock balances and remove the Proposal from the storage.
+		if T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), proposal.origin, T::SubmissionDeposit::get()).is_ok() &&
+			T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, sale_token, proposal.origin, crowd_allocation).is_ok() {
+				Self::proposals(id).remove();
+		}
 	}
 }
 
@@ -352,22 +370,7 @@ impl<T: Config> Campaign<T::AccountId, T::BlockNumber> for Pallet<T> {
 		Self::campaigns(id)
 	}
 
-	/// Record Successful Campaign by `id`
-	fn on_successful_campaign(id: Self::CampaignId) {
-		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
-		campaign.is_successful = true;
-		Self::successful_campaigns(id).put(campaign);
-	}
-	/// Record Failed Campaign by `id`
-	fn on_failed_campaign(id: Self::CampaignId) {
-		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
-		campaign.is_failed = true;
-		Self::campaigns(id).remove();
-	}
 	/// Called when a contribution is received.
-	/// The return value determines if the contribution should be accepted and 
-    /// update the amount of tokens allocated to the contributor.
-	/// Implementation should reserve the funds from the contributor.
 	fn on_contribution(
 		who: AccountIdOf<T>,
 		id: CampaignId,
@@ -376,20 +379,97 @@ impl<T: Config> Campaign<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		let (who, amount) = contribution;
 
+		// Ensure campaign is valid
+		Self::ensure_valid_campaign(id)?;
+
+		ensure!(amount >= T::MinContribution::get(), Error::<T>::ContributionBelowMinimum);
+		ensure!(T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &who) >= amount, Error::<T>::ContributionNotEnough);
+		ensure!(T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), who, amount).is_ok(), Error::<T>::ContributionNotEnoughBalance);
+		
+		campaign.raised += amount;
+		Self::campaigns(id).put(campaign);
+
+		// Get contribution position data
+		let Contribution {contributed, allocated} = Self::positions(id, who);
+
+		// Set and store contribution data structure in contributions map
+		let Contribution {contributed, allocated} = Contribution {
+			contributed: contributed + amount,
+			allocated: contributed / campaign.token_price,
+		} = Self::contributions(id, who);
+	}
+
+	/// Called when a contribution allocation is claimed
+	fn on_claim_allocation(
+		who: AccountId,
+		id: CampaignId,
+	) -> DispatchResult {
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		let (who, amount) = Self::positions(id, who);
+
+		// Ensure campaign is valid
+		Self::ensure_valid_campaign(id)?;
+
+		ensure!(amount >= T::MinContribution::get(), Error::<T>::ContributionBelowMinimum);
+		ensure!(T::MultiCurrency::free_balance(sale_token, &who) >= amount, Error::<T>::ContributionNotEnough);
+		ensure!(T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, sale_token, who, amount).is_ok(), Error::<T>::ContributionNotEnoughBalance);
+		
+		campaign.raised += amount;
+		Self::campaigns(id).put(campaign);
+
+		// Get contribution position data
+		let Contribution {contributed, allocated} = Self::positions(id, who);
+
+		// Set and store contribution data structure in contributions map
+		let Contribution {contributed, allocated} = Contribution {
+			contributed: contributed + amount,
+			allocated: contributed / campaign.token_price,
+		} = Self::contributions(id, who);
+	}
+
+	/// Called when a campaign's raised fund is claimed
+	fn on_claim_campaign(
+		who: AccountId,
+		id: CampaignId,
+	) -> DispatchResult {}
+
+	/// Ensure campaign is Valid
+	fn ensure_valid_campaign(id: Self::CampaignId) -> DispatchResult {
+		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		ensure!(!campaign.is_failed, Error::<T>::CampaignFailed);
-		ensure!(!campaign.is_successful, Error::<T>::CampaignSuccessful);
+		ensure!(!campaign.is_ended, Error::<T>::CampaignSuccessful);
 		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
 
 		ensure!(campaign.campaign_start <= <system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
 		ensure!(campaign.period > <system::Pallet<T>>::block_number() - campaign.campaign_start, Error::<T>::CampaignNotActive);
-		
-		ensure!(amount >= T::MinContribution::get(), Error::<T>::ContributionBelowMinimum);
-		ensure!(T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &who) >= amount, Error::<T>::ContributionNotEnough);
-		ensure!(T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), who, amount).is_ok(), Error::<T>::ContributionNotEnoughBalance);
-		campaign.raised += amount;
-		Self::campaigns(id).put(campaign);
+		Ok(())
+	}
 
-		let Some(contribution) = contributions.iter_mut().find(|c| c.who == who);
+	/// Ensure campaign is Valid
+	fn ensure_successful_campaign(id: Self::CampaignId) -> DispatchResult {
+		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		ensure!(!campaign.is_failed, Error::<T>::CampaignFailed);
+		ensure!(campaign.is_successful, Error::<T>::CampaignUnsuccessful);
+		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
+		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
+
+		ensure!(campaign.campaign_start <= <system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
+		ensure!(campaign.period > <system::Pallet<T>>::block_number() - campaign.campaign_start, Error::<T>::CampaignNotActive);
+		Ok(())
+	}
+
+	/// Record Successful Campaign by `id`
+	fn on_successful_campaign(id: Self::CampaignId) {
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		campaign.is_successful = true;
+		Self::successful_campaigns(id).put(campaign);
+		Self::
+	}
+	/// Transfer contribution allocation from locked campaign crowd allocation to contributors
+	fn dispense_contributions(who: AccountIdOf<T>, id: Self::CampaignId) {
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		let allocation_origin = campaign.origin;
+		let Some(contribution) = contributions.iter_mut().find(|who, contributed, allocated | c.who == who);
 		if let Some(contribution) = contribution {
 			contribution.amount += amount;
 		} else {
@@ -398,6 +478,23 @@ impl<T: Config> Campaign<T::AccountId, T::BlockNumber> for Pallet<T> {
 				amount,
 			});
 		}
-		Ok(())
+	}
+	/// Record Failed Campaign by `id`
+	fn on_failed_campaign(id: Self::CampaignId) {
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		campaign.is_failed = true;
+
+		let mut contributions = Self::contributions(id).ok_or(Error::<T>::CampaignNotFound)?;
+		for contribution in contributions {
+			if T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, sale_token, contribution.who, contribution.amount).is_ok() {
+				cont
+			}
+		}
+		// Unlock campaign creator's balances and remove the Campaign from the storage.
+		if T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), campaign.origin, T::SubmissionDeposit::get()).is_ok() &&
+			T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, sale_token, campaign.origin, crowd_allocation).is_ok() && {
+				
+			Self::campaigns(id).remove();
+		}
 	}
 }
