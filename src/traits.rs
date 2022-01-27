@@ -6,15 +6,11 @@ use sp_runtime::{
 	traits::{AtLeast32Bit, Bounded, MaybeSerializeDeserialize},
 	DispatchError, DispatchResult, RuntimeDebug,
 };
-use orml_traits::Change;
 use sp_std::{
 	cmp::{Eq, PartialEq},
 	fmt::Debug,
 	result,
 };
-
-/// Campaign ID
-pub type CampaignId = u32;
 
 /// The Structure of a Campaign info.
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
@@ -44,9 +40,6 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber, CurrencyId> {
 	/// Crowdsale Token amount for sale
 	#[codec(compact)]
 	crowd_allocation: Balance,
-	/// Crowdsale Allocation that has been claimed
-	#[codec(compact)]
-	claimed_allocation: Balance,
 	/// The Fundraise Goal - HardCap
 	#[codec(compact)]
 	goal: Balance,
@@ -65,6 +58,10 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber, CurrencyId> {
 	retirement_period: BlockNumber,
 	/// Is the campaign approved?
 	is_approved: bool,
+	/// Is the campaign in waiting period?
+	is_waiting: bool,
+	/// Is the campaign active?
+	is_active: bool,
 	/// Is the campaign Successful?
 	is_successful: bool,
 	/// Is the campaign Failed?
@@ -85,7 +82,7 @@ pub trait Proposal<AccountId, BlockNumber> {
 	type Balance: AtLeast32Bit + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
 
 	/// The Campaign Proposal info of `id`
-	fn proposal_info(id: Self::CampaignId) -> Option<CampaignInfo<AccountId, Self::Balance, BlockNumber>>;
+	fn proposal_info(id: Self::CampaignId) -> Option<CampaignInfo<AccountId, Self::Balance, BlockNumber, Self::CurrencyId>>;
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: AccountId,
@@ -96,6 +93,7 @@ pub trait Proposal<AccountId, BlockNumber> {
 		beneficiary: AccountId,
 		raise_currency: Self::CurrencyId,
 		sale_token: Self::CurrencyId,
+		token_price: Self::Balance,
 		crowd_allocation: Self::Balance,
 		goal: Self::Balance,
 		period: BlockNumber,
@@ -109,7 +107,7 @@ pub trait Proposal<AccountId, BlockNumber> {
 }
 
 /// Abstraction over th Launchpad Campaign system.
-pub trait Campaign<AccountId, BlockNumber> {
+pub trait CampaignManager<AccountId, BlockNumber> {
 	/// The id of a CampaignInfo
 	type CampaignId: FullCodec + Default + Copy + Eq + PartialEq + MaybeSerializeDeserialize + Bounded + Debug;
 	/// The currency type used for the campaign.
@@ -118,33 +116,37 @@ pub trait Campaign<AccountId, BlockNumber> {
 	type Balance: AtLeast32Bit + FullCodec + Copy + MaybeSerializeDeserialize + Debug + Default;
 
 	/// The Campaign info of `id`
-	fn campaign_info(id: Self::CampaignId) -> Option<CampaignInfo<AccountId, Self::Balance, BlockNumber>>;
+	fn campaign_info(id: Self::CampaignId) -> Option<CampaignInfo<AccountId, Self::Balance, BlockNumber, Self::CurrencyId>>;
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: AccountId,
-		id: CampaignId,
-		contribution: (Self::AccountId, Self::Balance),
+		id: Self::CampaignId,
+		contribution: (AccountId, Self::Balance),
 	) -> DispatchResult;
 	/// Called when a contribution allocation is claimed
 	fn on_claim_allocation(
 		who: AccountId,
-		id: CampaignId,
+		id: Self::CampaignId,
 	) -> DispatchResult;
 	/// Called when a campaign's raised fund is claimed
 	fn on_claim_campaign(
 		who: AccountId,
-		id: CampaignId,
+		id: Self::CampaignId,
 	) -> DispatchResult;
 	/// Ensure campaign is Valid and Running
 	fn ensure_valid_running_campaign(id: Self::CampaignId) -> DispatchResult;
+	/// Ensure campaign is Valid and Ended
+	fn ensure_ended_campaign(id: Self::CampaignId) -> DispatchResult;
 	/// Ensure campaign is Valid and Successfully Ended
-	fn ensure_successfully_ended_campaign(id: Self::CampaignId);
+	fn ensure_successfully_ended_campaign(id: Self::CampaignId) -> DispatchResult;
+	/// Record Successful Campaign by `id`
+	fn on_successful_campaign(id: Self::CampaignId) -> DispatchResult ;
 	/// Record Failed Campaign by `id`
-	fn on_failed_campaign(id: Self::CampaignId);
+	fn on_failed_campaign(id: Self::CampaignId) -> DispatchResult ;
 	/// Record Ended Campaign by `id`
-	fn on_ended_campaign(id: Self::CampaignId);
+	fn on_ended_campaign(id: Self::CampaignId) -> DispatchResult ;
 	/// Called when pool is retired
-	fn on_retire(id: Self::CampaignId);
+	fn on_retire(id: Self::CampaignId)-> DispatchResult;
 	/// Get amount of contributors in a campaign
 	fn get_contributors_count(id: Self::CampaignId) -> u32;
 }
