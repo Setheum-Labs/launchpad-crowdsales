@@ -16,28 +16,10 @@ use sp_std::{
 /// Campaign ID
 pub type CampaignId = u32;
 
-/// The auction ID type.
-type CampaignId: Parameter
-		+ Member
-		+ AtLeast32BitUnsigned
-		+ Default
-		+ Copy
-		+ MaybeSerializeDeserialize
-		+ Bounded
-		+ codec::FullCodec;
-
-/// A Contribution position.
-#[derive(Encode, Decode, Eq, PartialEq, Copy, Clone, RuntimeDebug, Default, MaxEncodedLen)]
-pub struct Contribution {
-	/// The amount of contribution made.
-	pub contributed: Balance,
-	/// The amount of allocation made.
-	pub allocated: Balance,
-}
 /// The Structure of a Campaign info.
 #[cfg_attr(feature = "std", derive(PartialEq, Eq))]
 #[derive(Encode, Decode, Clone, RuntimeDebug)]
-pub struct CampaignInfo<AccountId, BlockNumber> {
+pub struct CampaignInfo<AccountId, Balance, BlockNumber, CurrencyId> {
 	/// Campaign Creator
 	origin: AccountId,
 	/// Project Name
@@ -50,6 +32,8 @@ pub struct CampaignInfo<AccountId, BlockNumber> {
 	project_website: Vec<u8>,
 	/// Campaign Beneficiary
 	beneficiary: AccountId,
+	/// Campaign Pool AccountId
+	pool: AccountId,
 	/// Currency type for the fundraise
 	raise_currency: CurrencyId,
 	/// Currency type (Token) for crowdsale
@@ -60,23 +44,35 @@ pub struct CampaignInfo<AccountId, BlockNumber> {
 	/// Crowdsale Token amount for sale
 	#[codec(compact)]
 	crowd_allocation: Balance,
+	/// Crowdsale Allocation that has been claimed
+	#[codec(compact)]
+	claimed_allocation: Balance,
 	/// The Fundraise Goal - HardCap
 	#[codec(compact)]
 	goal: Balance,
+	/// The Fundraise Amount raised - HardCap
 	#[codec(compact)]
 	raised: Balance,
+	/// The Campaign contributions
+	/// account_id, contribution, allocation, bool:claimed_allocation
+	#[codec(compact)]
+	contributions: Vec<(AccountId, Balance, Balance, bool)>,
 	/// The period that the campaign runs for.
 	period: BlockNumber,
 	/// The time when the campaign starts.
 	campaign_start: BlockNumber,
+	/// The time when the campaign starts.
+	retirement_period: BlockNumber,
 	/// Is the campaign approved?
-	is_approved: Bool,
+	is_approved: bool,
 	/// Is the campaign Successful?
-	is_successful: Bool,
+	is_successful: bool,
 	/// Is the campaign Failed?
-	is_failed: Bool,
+	is_failed: bool,
 	/// Is the campaign Ended?
-	is_ended: Bool,
+	is_ended: bool,
+	/// Is the campaign funds raised claimed
+	is_claimed: bool,
 }
 
 /// Abstraction over th Launchpad Proposal system.
@@ -101,8 +97,8 @@ pub trait Proposal<AccountId, BlockNumber> {
 		raise_currency: Self::CurrencyId,
 		sale_token: Self::CurrencyId,
 		crowd_allocation: Self::Balance,
-		goal: Balance,
-		period: T::BlockNumber,
+		goal: Self::Balance,
+		period: BlockNumber,
 	) -> result::Result<Self::CampaignId, DispatchError>;
 	/// Ensure proposal is valid
 	fn ensure_valid_proposal(id: Self::CampaignId) -> result::Result<(), DispatchError>;
@@ -139,10 +135,16 @@ pub trait Campaign<AccountId, BlockNumber> {
 		who: AccountId,
 		id: CampaignId,
 	) -> DispatchResult;
-	/// Ensure that the campaign is still running.
-	fn ensure_valid_campaign(id: Self::CampaignId) -> DispatchResult;
-	/// Record Successful Campaign by `id`
-	fn on_successful_campaign(id: Self::CampaignId);
+	/// Ensure campaign is Valid and Running
+	fn ensure_valid_running_campaign(id: Self::CampaignId) -> DispatchResult;
+	/// Ensure campaign is Valid and Successfully Ended
+	fn ensure_successfully_ended_campaign(id: Self::CampaignId);
 	/// Record Failed Campaign by `id`
 	fn on_failed_campaign(id: Self::CampaignId);
+	/// Record Ended Campaign by `id`
+	fn on_ended_campaign(id: Self::CampaignId);
+	/// Called when pool is retired
+	fn on_retire(id: Self::CampaignId);
+	/// Get amount of contributors in a campaign
+	fn get_contributors_count(id: Self::CampaignId) -> u32;
 }
