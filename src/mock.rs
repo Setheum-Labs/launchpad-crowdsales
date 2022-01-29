@@ -8,35 +8,35 @@ use frame_system::EnsureSignedBy;
 use orml_traits::parameter_type_with_key;
 use sp_core::H256;
 use sp_runtime::{
-	testing::Header, AccountId32,
+	testing::Header,
 	traits::{IdentityLookup},
 };
 
 pub type AccountId = u128;
-pub type Balance = u64;
+pub type Amount = i128;
+pub type Balance = u32;
 pub type BlockNumber = u64;
 pub type CurrencyId = u32;
 
 // The network Treasury account.
-pub const TREASURY: AccountId = AccountId32::new([0u8; 32]);
+pub const TREASURY: AccountId = 0;
 // Mock accounts.
-pub const ALICE: AccountId = AccountId32::new([1u8; 32]);
-pub const BOB: AccountId = AccountId32::new([2u8; 32]);
-pub const CHARLIE: AccountId = AccountId32::new([3u8; 32]);
-pub const DAVE: AccountId = AccountId32::new([4u8; 32]);
-pub const EVE: AccountId = AccountId32::new([5u8; 32]);
-pub const FRED: AccountId = AccountId32::new([6u8; 32]);
-pub const GREG: AccountId = AccountId32::new([7u8; 32]);
-pub const HANA: AccountId = AccountId32::new([8u8; 32]);
-pub const IGOR: AccountId = AccountId32::new([9u8; 32]);
-pub const JOHN: AccountId = AccountId32::new([10u8; 32]);
+pub const ALICE: AccountId = 1;
+pub const BOB: AccountId = 2;
+pub const CHARLIE: AccountId = 3;
+pub const DAVE: AccountId = 4;
+pub const EVE: AccountId = 5;
+pub const FRED: AccountId = 6;
+pub const GREG: AccountId = 7;
+pub const HANA: AccountId = 8;
+pub const IGOR: AccountId = 9;
+pub const JOHN: AccountId = 10;
 
-// The Native currency of the protocol
-pub const NATIVE_COIN: CurrencyId = 0;
-// The Stablecoin of the Protocol
-pub const STABLE_COIN: CurrencyId = 1;
-// The Crowdsale Token
-pub const ICO_COIN: CurrencyId = 1;
+pub const SETM: CurrencyId = 1;
+pub const SETUSD: CurrencyId = 2;
+pub const TEST: CurrencyId = 3;
+pub const DOT: CurrencyId = 4;
+
 mod crowdsales {
 	pub use super::super::*;
 }
@@ -89,20 +89,57 @@ impl orml_tokens::Config for Runtime {
 	type DustRemovalWhitelist = ();
 }
 
+parameter_type_with_key! {
+	pub MinRaise: |currency_id: CurrencyId| -> Balance {
+		match currency_id {
+			&SETUSD => 100,
+			&SETM => 100,
+			&DOT => 100,
+			_ => 0,
+		}
+	};
+}
+
+parameter_type_with_key! {
+	pub MinContribution: |currency_id: CurrencyId| -> Balance {
+		match currency_id {
+			&SETUSD => 100,
+			&SETM => 100,
+			&DOT => 100,
+			_ => 0,
+		}
+	};
+}
+
 parameter_types! {
 	pub const GetNativeCurrencyId: CurrencyId = SETM;  // Setheum native currency ticker is SETM/
-	pub const CrowdsalesPalletId: PalletId = PalletId(*b"set/drop");
+	pub const GetCommission: (u32, u32) = (10, 100); // 10%
+	pub const SubmissionDeposit: Balance = 20;
+	pub const MaxProposalsCount: u32 = 3;
+	pub const MaxCampaignsCount: u32 = 3;
+	pub const MaxActivePeriod: BlockNumber = 20;
+	pub const CampaignStartDelay: BlockNumber = 5;
+	pub const RetirementPeriod: BlockNumber = 20;
+	pub const CrowdsalesPalletId: PalletId = PalletId(*b"set/help");
 }
 
 ord_parameter_types! {
 	pub const TreasuryAccount: AccountId = TREASURY;
-	pub const Eleven: AccountId = AccountId32::new([11u8; 32]);
+	pub const Eleven: AccountId = 11;
 }
 impl Config for Runtime {
 	type Event = Event;
 	type MultiCurrency = Tokens;
 	type GetNativeCurrencyId = GetNativeCurrencyId;
-	type Crowdsales = Crowdsales;
+	type GetCommission = GetCommission;
+	type SubmissionDeposit = SubmissionDeposit;
+	type MinRaise = MinRaise;
+	type MinContribution = MinContribution;
+	type MaxProposalsCount = MaxProposalsCount;
+	type MaxCampaignsCount = MaxCampaignsCount;
+	type MaxActivePeriod = MaxActivePeriod;
+	type CampaignStartDelay = CampaignStartDelay;
+	type RetirementPeriod = RetirementPeriod;
 	type UpdateOrigin = EnsureSignedBy<Eleven, AccountId>;
 	type PalletId = CrowdsalesPalletId;
 }
