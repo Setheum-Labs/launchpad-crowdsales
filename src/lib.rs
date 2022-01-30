@@ -226,11 +226,6 @@ pub mod module {
 	#[pallet::getter(fn successful_campaign_index)]
 	pub type SuccessfulCampaignsCount<T: Config> = StorageValue<_, CampaignId, ValueQuery>;
 
-	// Track the number of simultaneous Proposals - ProposalsCount
-	#[pallet::storage]
-	#[pallet::getter(fn proposals_index)]
-	pub type ProposalsCount<T: Config> = StorageValue<_, CampaignId, ValueQuery>;
-
 	/// Record of the total amount of funds raised in the protocol
 	///  under a specific currency_id. currency_id => total_raised
 	///
@@ -244,7 +239,70 @@ pub mod module {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<T::BlockNumber> for Pallet<T> {
-		
+		// Call at the start of the block to eventuiate on_proposals and on_campaigns
+		// on_initialize is called at the start of the block.
+		fn on_initialize(now: T::BlockNumber) -> Weight {
+			/// Calls to eventuate proposals and campaigns.
+			let mut count: u32 = 0;
+			count += 1;
+
+			// Get the proposals
+			let proposals = <Proposals<T>>::get();
+			// Get the campaigns
+			let campaigns = <Campaigns<T>>::get();
+
+			// Eventuate proposals and campaigns
+			if proposals.len() > 0 || campaigns.len() > 0 {
+				// If there are proposals, check if to remove rejected and retired proposals.
+				if proposals.len() > 0 {
+					// Iterate over the proposals
+					for (campaign_id, campaign_info) in proposals.iter() {
+						// If the proposal is rejected, check if to remove it
+						if campaign_info.is_rejected && now >= campaign_info.proposal_retirement_period {
+							// Remove the proposal
+							Self::remove_proposal(campaign_id);
+							count += 1;
+						}
+						break;
+					}
+				}
+				// If there are campaigns, check if to start or end them
+				if campaigns.len() > 0 {
+					// Iterate over the campaigns
+					for (campaign_id, campaign_info) in campaigns.iter() {
+						// If the campaign is waiting, check if to start it
+						if campaign_info.is_waiting && campaign_info.campaign_start <= now {
+							// Set campaign to active
+							campaign_info.is_waiting = false;
+							campaign_info.is_active = true;
+							// Update campaign storage
+							<Campaigns<T>>::insert(campaign_id, campaign_info);
+							count += 1;
+						}
+						// If the campaign is active, check if to end it
+						if campaign_info.is_active && !campaign_info.is_ended{
+							// If campaign is successfull, call on successful campaign
+							if campaign_info.raised >= campaign_info.goal {
+								Self::on_successful_campaign(campaign_id)?;
+								count += 1;
+							} else if campaign_info.campaign_end <= now && campaign_info.raised < campaign_info.goal {
+								// If campaign is failed, call on failed campaign
+								Self::on_failed_campaign(campaign_id)?;
+								count += 1;
+							}
+						}
+						// If the campaign reaches retirement period, call on retirement
+						if campaign_info.is_ended && campaign_info.campaign_retirement_period <= now {
+							Self::on_retire(campaign_id);
+							count += 1;
+						}
+						break;
+					}
+				}
+			} else {
+				0
+			}
+		}
 	}
 
 	#[pallet::call]
@@ -267,9 +325,6 @@ pub mod module {
 			period: T::BlockNumber,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
-
-			// Ensure max proposals not exceeded
-			ensure!(<ProposalsCount<T>>::get() <= T::MaxProposalsCount::get(), Error::<T>::MaxProposalsExceeded);
 
 			// Ensure that the period is not zero
 			ensure!(period > T::BlockNumber::zero(), Error::<T>::ZeroPeriod);
@@ -312,30 +367,6 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
-	
-	/// Called in on_initialize() to eventuate proposals;
-	fn on_proposals(now: T::BlockNumber) -> DispatchResult {
-		// If there are proposals, check if to start or end them
-		if <Proposals<T>>::exists() {
-			let mut count: u32 = 0;
-			count += 1;
-			
-			// Iterate over all proposals
-			for (id, proposal) in <Proposals<T>>::iter() {
-				// If the proposal is rejected, check if to remove it
-				if proposal.is_rejected && now >= proposal.proposal_retirement_period {
-					// Remove proposal
-					Self::remove_proposal(id);
-					count += 1;
-				}
-				break;
-			}
-			count
-		} else {
-			0
-		}
-	}
-	
 	/// The Campaign Proposal info of `id`
 	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		Self::proposals(id)
@@ -363,9 +394,9 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let campaign_id = <CampaignsIndex<T>>::get() + 1;
 		<CampaignsIndex<T>>::put(campaign_id);
 
-		// Proposal count - overflow not managed
-		let proposal_count = <ProposalsCount<T>>::get() + 1;
-		<ProposalsCount<T>>::put(proposal_count);
+		// Ensure max proposals not exceeded
+		let proposals = <Proposals<T>>::get();
+		ensure!(proposals.len() <= T::MaxProposalsCount::get(), Error::<T>::MaxProposalsExceeded);
 
 		// Generate the CampaignInfo structure
 		let proposal = CampaignInfo {
@@ -435,7 +466,8 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
 
-		ensure!(<ActiveCampaignsCount<T>>::get() <= T::MaxCampaignsCount::get(), Error::<T>::MaxCampaignsExceeded);
+		let campaigns = <Campaigns<T>>::get();
+		ensure!(campaigns.len() <= T::MaxCampaignsCount::get(), Error::<T>::MaxCampaignsExceeded);
 
 		// Approve the proposal in CampaignInfo and set it to waiting
 		proposal.is_approved = true;
@@ -488,49 +520,6 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 }
 
 impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
-
-	/// Called in on_initialize() to eventuate campaigns;
-	fn on_campaigns(now: T::BlockNumber) -> DispatchResult {
-		// If there are campaigns, check if to start or end them
-		if <Campaigns<T>>::exists() {
-			let mut count: u32 = 0;
-			count += 1;
-			
-			// Iterate over all campaigns
-			for (id, campaign) in <Campaigns<T>>::iter() {
-				// If the campaign is waiting, check if to start it
-				if campaign.is_waiting && campaign.campaign_start <= now {
-					// Set campaign to active
-					campaign.is_waiting = false;
-					campaign.is_active = true;
-					// Update campaign storage
-					<Campaigns<T>>::insert(id, campaign);
-					count += 1;
-				}
-				// If the campaign is active, check if to end it
-				if campaign.is_active && !campaign.is_ended{
-					// If campaign is successfull, call on successful campaign
-					if campaign.raised >= campaign.goal {
-						Self::on_successful_campaign(id);
-						count += 1;
-					} else if campaign.campaign_end <= now && campaign.raised < campaign.goal {
-						// If campaign is failed, call on failed campaign
-						Self::on_failed_campaign(id);
-						count += 1;
-					}
-				}
-				// If the campaign reaches retirement period, call on retirement
-				if campaign.is_ended && campaign.campaign_retirement_period <= now {
-					Self::on_retire(id);
-					count += 1;
-				}
-				break;
-			}
-		} else {
-			0
-		}
-	}
-
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		Self::campaigns(id)

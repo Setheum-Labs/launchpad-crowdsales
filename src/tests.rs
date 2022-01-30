@@ -10,7 +10,7 @@ use mock::*;
 #[test]
 fn make_proposal_works() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(Crowdsales::make_proposal(
+        assert_ok!(LaunchPadCrowdsales::make_proposal(
             Origin::signed(ALICE),
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -25,7 +25,7 @@ fn make_proposal_works() {
             20
         ));
         assert_eq!(
-            Crowdsales::proposal_info(0),
+            LaunchPadCrowdsales::proposal_info(0),
             Some(ProposalInfo {
                 origin: ALICE,
                 project_name: "Project Name".to_owned(),
@@ -63,7 +63,7 @@ fn make_proposal_works() {
 #[test]
 fn proposal_info_works() {
 	ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(Crowdsales::make_proposal(
+        assert_ok!(LaunchPadCrowdsales::make_proposal(
             Origin::signed(ALICE),
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -78,7 +78,7 @@ fn proposal_info_works() {
             20
         ));
         assert_eq!(
-            Crowdsales::proposal_info(0),
+            LaunchPadCrowdsales::proposal_info(0),
             Some(ProposalInfo {
                 origin: ALICE,
                 project_name: "Project Name".to_owned(),
@@ -118,7 +118,7 @@ fn proposal_info_works() {
 fn proposal_info_none_works() {
     ExtBuilder::default().build().execute_with(|| {
         assert_eq!(
-            Crowdsales::proposal_info(0),
+            LaunchPadCrowdsales::proposal_info(0),
             None
         )
     });
@@ -127,7 +127,7 @@ fn proposal_info_none_works() {
 #[test]
 fn proposal_info_works_for_proposal_id_1() {
     ExtBuilder::default().build().execute_with(|| {
-        assert_ok!(Crowdsales::make_proposal(
+        assert_ok!(LaunchPadCrowdsales::make_proposal(
             Origin::signed(ALICE),
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -141,7 +141,7 @@ fn proposal_info_works_for_proposal_id_1() {
             100_000,
             20
         ));
-        assert_ok!(Crowdsales::make_proposal(
+        assert_ok!(LaunchPadCrowdsales::make_proposal(
             Origin::signed(ALICE),
             "Project 1 Name".to_owned(),
             "Project 1 Logo".to_owned(),
@@ -156,7 +156,7 @@ fn proposal_info_works_for_proposal_id_1() {
             21
         ));
         assert_eq!(
-            Crowdsales::proposal_info(1),
+            LaunchPadCrowdsales::proposal_info(1),
             Some(ProposalInfo {
                 origin: ALICE,
                 project_name: "Project 1 Name".to_owned(),
@@ -195,7 +195,7 @@ fn proposal_info_works_for_proposal_id_1() {
 #[test]
 fn new_proposal_works() {
     ExtBuilder::Default().build().execute_with(|| {
-        assert_ok!(Crowdsales::new_proposal(
+        assert_ok!(LaunchPadCrowdsales::new_proposal(
             ALICE,
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -210,7 +210,7 @@ fn new_proposal_works() {
             20
         ));
         assert_eq!(
-            Crowdsales::proposal_info(0),
+            LaunchPadCrowdsales::proposal_info(0),
             Some(ProposalInfo {
                 origin: ALICE,
                 project_name: "Project Name".to_owned(),
@@ -250,7 +250,7 @@ fn new_proposal_works() {
 #[test]
 fn ensure_valid_proposal_works() {
     ExtBuilder::Default().build().execute_with(|| {
-        assert_ok!(Crowdsales::new_proposal(
+        assert_ok!(LaunchPadCrowdsales::new_proposal(
             Origin::signed(ALICE),
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -264,9 +264,9 @@ fn ensure_valid_proposal_works() {
             100_000,
             20
         ));
-        assert_ok!(Crowdsales::ensure_valid_proposal(0));
+        assert_ok!(LaunchPadCrowdsales::ensure_valid_proposal(0));
         assert_noop!(
-            Crowdsales::ensure_valid_proposal(1),
+            LaunchPadCrowdsales::ensure_valid_proposal(1),
             Error::<Runtime>::ProposalNotFound
         );
     })
@@ -275,7 +275,7 @@ fn ensure_valid_proposal_works() {
 #[test]
 fn ensure_valid_proposal_not_works_for_approved_proposal() {
     ExtBuilder::Default().build().execute_with(|| {
-        assert_ok!(Crowdsales::new_proposal(
+        assert_ok!(LaunchPadCrowdsales::new_proposal(
             Origin::signed(ALICE),
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -289,9 +289,9 @@ fn ensure_valid_proposal_not_works_for_approved_proposal() {
             100_000,
             20
         ));
-        assert_ok!(Crowdsales::approve_proposal(0));
+        assert_ok!(LaunchPadCrowdsales::approve_proposal(0));
         assert_noop!(
-            Crowdsales::ensure_valid_proposal(Origin::signed(ALICE), 0),
+            LaunchPadCrowdsales::ensure_valid_proposal(Origin::signed(ALICE), 0),
             Error::<Runtime>::ProposalAlreadyApproved
         );
     })
@@ -299,7 +299,7 @@ fn ensure_valid_proposal_not_works_for_approved_proposal() {
 #[test]
 fn_approve_proposal_works() {
     ExtBuilder::Default().build().execute_with(|| {
-        assert_ok!(Crowdsales::new_proposal(
+        assert_ok!(LaunchPadCrowdsales::new_proposal(
             Origin::signed(ALICE),
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -313,9 +313,9 @@ fn_approve_proposal_works() {
             100_000,
             20
         ));
-        assert_ok!(Crowdsales::approve_proposal(0));
+        assert_ok!(LaunchPadCrowdsales::approve_proposal(0));
         assert_eq!(
-            Crowdsales::proposal_info(0),
+            LaunchPadCrowdsales::proposal_info(0),
             Some(ProposalInfo {
                 origin: ALICE,
                 project_name: "Project Name".to_owned(),
@@ -355,7 +355,7 @@ fn_approve_proposal_works() {
 #[test]
 fn reject_proposal_works() {
     ExtBuilder::Default().build().execute_with(|| {
-        assert_ok!(Crowdsales::new_proposal(
+        assert_ok!(LaunchPadCrowdsales::new_proposal(
             Origin::signed(ALICE),
             "Project Name".to_owned(),
             "Project Logo".to_owned(),
@@ -369,9 +369,9 @@ fn reject_proposal_works() {
             100_000,
             20
         ));
-        assert_ok!(Crowdsales::reject_proposal(0));
+        assert_ok!(LaunchPadCrowdsales::reject_proposal(0));
         assert_eq!(
-            Crowdsales::proposal_info(0),
+            LaunchPadCrowdsales::proposal_info(0),
             Some(ProposalInfo {
                 origin: ALICE,
                 project_name: "Project Name".to_owned(),
