@@ -139,7 +139,8 @@ impl Config for Runtime {
 	type MaxCampaignsCount = MaxCampaignsCount;
 	type MaxActivePeriod = MaxActivePeriod;
 	type CampaignStartDelay = CampaignStartDelay;
-	type RetirementPeriod = RetirementPeriod;
+	type CampaignRetirementPeriod = RetirementPeriod;
+	type ProposalRetirementPeriod = RetirementPeriod;
 	type UpdateOrigin = EnsureSignedBy<Eleven, AccountId>;
 	type PalletId = CrowdsalesPalletId;
 }

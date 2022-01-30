@@ -41,17 +41,27 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	pub goal: Balance,
 	/// The Fundraise Amount raised - HardCap
 	pub raised: Balance,
+	/// The number of contributors to the campaign
+	pub contributors_count: u32,
 	/// The Campaign contributions
 	/// account_id, contribution, allocation, bool:claimed_allocation
 	pub contributions: Vec<(AccountId, Balance, Balance, bool)>,
+	/// The time when the proposal was made.
+	pub proposal_time: BlockNumber,
 	/// The period that the campaign runs for.
 	pub period: BlockNumber,
 	/// The time when the campaign starts.
 	pub campaign_start: BlockNumber,
-	/// The time when the campaign starts.
-	pub retirement_period: BlockNumber,
+	/// The time when the campaign ends.
+	pub campaign_end: BlockNumber,
+	/// The time when the campaign fund retires.
+	pub campaign_retirement_period: BlockNumber,
+	/// The time when a rejected proposal is removed from storage.
+	pub proposal_retirement_period: BlockNumber,
 	/// Is the campaign approved?
 	pub is_approved: bool,
+	/// Is the proposal rejected?
+	pub is_rejected: bool,
 	/// Is the campaign in waiting period?
 	pub is_waiting: bool,
 	/// Is the campaign active?
@@ -68,6 +78,8 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 
 /// Abstraction over th Launchpad Proposal system.
 pub trait Proposal<AccountId, BlockNumber> {
+	/// Called in on_initialize() to eventuate campaigns;
+	fn on_proposals(now: Self::BlockNumber) -> DispatchResult;
 	/// The Campaign Proposal info of `id`
 	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
@@ -89,12 +101,16 @@ pub trait Proposal<AccountId, BlockNumber> {
 	fn ensure_valid_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
     /// Approve Proposal by `id` at `now`.
     fn approve_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
-	/// Reject Proposal by `id` and remove from dtorage
+	/// Reject Proposal by `id` and update storage
 	fn reject_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+	/// Remove Proposal by `id` and remove from storage
+	fn remove_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 }
 
-/// Abstraction over th Launchpad Campaign system.
+/// Abstraction over the Launchpad Campaign system.
 pub trait CampaignManager<AccountId, BlockNumber> {
+	/// Called in on_initialize() to eventuate campaigns;
+	fn on_campaigns(now: Self::BlockNumber) -> DispatchResult;
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Called when a contribution is received.
@@ -128,10 +144,6 @@ pub trait CampaignManager<AccountId, BlockNumber> {
 	fn on_successful_campaign(id: CampaignId) -> DispatchResult ;
 	/// Record Failed Campaign by `id`
 	fn on_failed_campaign(id: CampaignId) -> DispatchResult ;
-	/// Record Ended Campaign by `id`
-	fn on_ended_campaign(id: CampaignId) -> DispatchResult ;
 	/// Called when pool is retired
 	fn on_retire(id: CampaignId)-> DispatchResult;
-	/// Get amount of contributors in a campaign
-	fn get_contributors_count(id: CampaignId) -> u32;
 }
