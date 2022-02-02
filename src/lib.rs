@@ -27,7 +27,7 @@ mod tests;
 pub mod traits;
 
 pub use traits::{
-	Balance, CampaignId, CampaignInfo, CampaignManager, CurrencyId, Proposal,
+	Balance, CampaignInfo, CampaignManager, CurrencyId, Proposal,
 };
 pub use module::*;
 
@@ -156,7 +156,7 @@ pub mod module {
 		/// no more proposals can be made until one is approved or rejected.
 		MaxProposalsExceeded,
 		/// Campaign Id unavailable.
-		NoAvailableCampaignId,
+		NoAvailableu32,
 		/// You cannot withdraw funds because you have not contributed any.
 		NoContribution,
 		/// Proposal is already approved.
@@ -174,57 +174,59 @@ pub mod module {
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", CurrencyId = "CurrencyId")]
 	pub enum Event<T: Config> {
 		/// Created Proposal \[campaign_id\]
-		CreatedProposal(CampaignId),
+		CreatedProposal(u32),
 		/// Rejected Proposal \[campaign_id\]
-		RejectedProposal(CampaignId),
+		RejectedProposal(u32),
 		/// Approved Proposal \[campaign_id\]
-		ApprovedProposal(CampaignId),
+		ApprovedProposal(u32),
 		/// Campaign Started \[campaign_id\]
-		StartedCampaign(CampaignId),
+		StartedCampaign(u32),
 		/// Ended Campaign Successfully \[campaign_id, campaign_info\]
-		EndedCampaignSuccessful(CampaignId),
+		EndedCampaignSuccessful(u32),
 		/// Ended Campaign Unsuccessfully \[campaign_id, campaign_info\]
-		EndedCampaignUnsuccessful(CampaignId),
+		EndedCampaignUnsuccessful(u32),
 		/// Contributed to Campaign \[campaign_id, contribution_amount\]
-		ContributedToCampaign(CampaignId, BalanceOf<T>),
+		ContributedToCampaign(u32, BalanceOf<T>),
 		/// Claimed Funds Raised \[claimant_account_id, campaign_id, amount_claimed\]
-		ClaimedFundraise(T::AccountId, CampaignId, BalanceOf<T>),
+		ClaimedFundraise(T::AccountId, u32, BalanceOf<T>),
 		/// Claimed Contribution Allocation \[claimant_account_id, campaign_id, allocation_claimed\]
-		ClaimedAllocation(T::AccountId, CampaignId, BalanceOf<T>),
+		ClaimedAllocation(T::AccountId, u32, BalanceOf<T>),
 		/// Dissolved Unclaimed Funds \[amount, campaign_id, now\]
-		DissolvedFunds(BalanceOf<T>, CampaignId, <T as frame_system::Config>::BlockNumber),
+		DissolvedFunds(BalanceOf<T>, u32, <T as frame_system::Config>::BlockNumber),
 		/// Dispensed Commissions \[amount, campaign_id, now\]
-		DispensedCommissions(BalanceOf<T>, CampaignId, <T as frame_system::Config>::BlockNumber),
+		DispensedCommissions(BalanceOf<T>, u32, <T as frame_system::Config>::BlockNumber),
 	}
 	
 	/// Info on all of the proposed campaigns.
 	///
-	/// map CampaignId => CampaignInfo
+	/// map u32 => CampaignInfo
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
-	pub type Proposals<T: Config> = StorageMap<_, Blake2_128Concat, CampaignId, CampaignInfoOf<T>, OptionQuery>;
+	pub type Proposals<T: Config> = StorageMap<_, Blake2_128Concat, u32, CampaignInfoOf<T>, OptionQuery>;
 	
 	/// Info on all of the approved campaigns.
 	///
-	/// map CampaignId => CampaignInfo
+	/// map u32 => CampaignInfo
 	#[pallet::storage]
 	#[pallet::getter(fn campaigns)]
-	pub type Campaigns<T: Config> = StorageMap<_, Blake2_128Concat, CampaignId, CampaignInfoOf<T>, OptionQuery>;
+	pub type Campaigns<T: Config> = StorageMap<_, Blake2_128Concat, u32, CampaignInfoOf<T>, OptionQuery>;
 
 	// Track the next campaign id to be used.
 	#[pallet::storage]
 	#[pallet::getter(fn campaign_index)]
-	pub type CampaignsIndex<T: Config> = StorageValue<_, CampaignId, ValueQuery>;
+	pub type CampaignsIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	// Track the number of simultaneous Active Campaigns - ActiveCampaignsIndex
+
 	#[pallet::storage]
 	#[pallet::getter(fn active_campaigns_count)]
-	pub type ActiveCampaignsCount<T: Config> = StorageValue<_, CampaignId, ValueQuery>;
+	pub type ActiveCampaignsCount<T: Config> = StorageValue<_, u32, ValueQuery>;
 
 	// Track the number of successful campaigns the protocol has achieved.
 	#[pallet::storage]
 	#[pallet::getter(fn successful_campaign_index)]
-	pub type SuccessfulCampaignsCount<T: Config> = StorageValue<_, CampaignId, ValueQuery>;
+	pub type SuccessfulCampaignsCount<T: Config> = StorageValue<_, u32, ValueQuery>;
+
 
 	/// Record of the total amount of funds raised in the protocol
 	///  under a specific currency_id. currency_id => total_raised
@@ -242,66 +244,57 @@ pub mod module {
 		// Call at the start of the block to eventuiate on_proposals and on_campaigns
 		// on_initialize is called at the start of the block.
 		fn on_initialize(now: T::BlockNumber) -> Weight {
-			/// Calls to eventuate proposals and campaigns.
-			let mut count: u32 = 0;
+
+			// Calls to eventuate proposals and campaigns.
+			
+			let mut count: Weight = 0;
 			count += 1;
 
-			// Get the proposals
-			let proposals = <Proposals<T>>::get();
-			// Get the campaigns
-			let campaigns = <Campaigns<T>>::get();
-
 			// Eventuate proposals and campaigns
-			if proposals.len() > 0 || campaigns.len() > 0 {
-				// If there are proposals, check if to remove rejected and retired proposals.
-				if proposals.len() > 0 {
-					// Iterate over the proposals
-					for (campaign_id, campaign_info) in proposals.iter() {
-						// If the proposal is rejected, check if to remove it
-						if campaign_info.is_rejected && now >= campaign_info.proposal_retirement_period {
-							// Remove the proposal
-							Self::remove_proposal(campaign_id);
-							count += 1;
-						}
-						break;
-					}
+
+			// If there are proposals, check if to remove rejected and retired proposals.
+			// Iterate over the proposals
+			for (campaign_id, campaign_info) in Proposals::<T>::iter() {
+				// If the proposal is rejected, check if to remove it
+				if campaign_info.is_rejected && now >= campaign_info.proposal_retirement_period {
+					// Remove the proposal
+					Self::remove_proposal(campaign_id as u32);
+					count += 1;
 				}
-				// If there are campaigns, check if to start or end them
-				if campaigns.len() > 0 {
-					// Iterate over the campaigns
-					for (campaign_id, campaign_info) in campaigns.iter() {
-						// If the campaign is waiting, check if to start it
-						if campaign_info.is_waiting && campaign_info.campaign_start <= now {
-							// Set campaign to active
-							campaign_info.is_waiting = false;
-							campaign_info.is_active = true;
-							// Update campaign storage
-							<Campaigns<T>>::insert(campaign_id, campaign_info);
-							count += 1;
-						}
-						// If the campaign is active, check if to end it
-						if campaign_info.is_active && !campaign_info.is_ended{
-							// If campaign is successfull, call on successful campaign
-							if campaign_info.raised >= campaign_info.goal {
-								Self::on_successful_campaign(campaign_id)?;
-								count += 1;
-							} else if campaign_info.campaign_end <= now && campaign_info.raised < campaign_info.goal {
-								// If campaign is failed, call on failed campaign
-								Self::on_failed_campaign(campaign_id)?;
-								count += 1;
-							}
-						}
-						// If the campaign reaches retirement period, call on retirement
-						if campaign_info.is_ended && campaign_info.campaign_retirement_period <= now {
-							Self::on_retire(campaign_id);
-							count += 1;
-						}
-						break;
-					}
-				}
-			} else {
-				0
+				break;
 			}
+			// If there are campaigns, check if to start or end them
+			// Iterate over the campaigns
+			for (campaign_id, campaign_info) in Campaigns::<T>::iter() {
+				// If the campaign is waiting, check if to start it
+				if campaign_info.is_waiting && campaign_info.campaign_start <= now {
+					// Set campaign to active
+					campaign_info.is_waiting = false;
+					campaign_info.is_active = true;
+					// Update campaign storage
+					<Campaigns<T>>::insert(campaign_id, campaign_info);
+					count += 1;
+				}
+				// If the campaign is active, check if to end it
+				if campaign_info.is_active && !campaign_info.is_ended{
+					// If campaign is successfull, call on successful campaign
+					if campaign_info.raised >= campaign_info.goal {
+						Self::on_successful_campaign(now, campaign_id);
+						count += 1;
+					} else if campaign_info.campaign_end <= now && campaign_info.raised < campaign_info.goal {
+						// If campaign is failed, call on failed campaign
+						Self::on_failed_campaign(now, campaign_id);
+						count += 1;
+					}
+				}
+				// If the campaign reaches retirement period, call on retirement
+				if campaign_info.is_ended && &campaign_info.campaign_retirement_period <= &now {
+					Self::on_retire(campaign_id);
+					count += 1;
+				}
+				break;
+			}
+			count
 		}
 	}
 
@@ -361,14 +354,14 @@ impl<T: Config> Pallet<T> {
 
 	/// The account ID of the fund pot.
 	///
-	pub fn campaign_pool(id: CampaignId) -> T::AccountId {
+	pub fn campaign_pool(id: u32) -> T::AccountId {
 		T::PalletId::get().into_sub_account(id)
 	}
 }
 
 impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// The Campaign Proposal info of `id`
-	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
+	fn proposal_info(id: u32) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		Self::proposals(id)
 	}
 
@@ -394,9 +387,11 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let campaign_id = <CampaignsIndex<T>>::get() + 1;
 		<CampaignsIndex<T>>::put(campaign_id);
 
-		// Ensure max proposals not exceeded
-		let proposals = <Proposals<T>>::get();
-		ensure!(proposals.len() <= T::MaxProposalsCount::get(), Error::<T>::MaxProposalsExceeded);
+		// Get the proposals
+		let proposals = Proposals::<T>::iter();
+			
+		// // Ensure max proposals not exceeded
+		// ensure!(proposals.len() as u32 <= T::MaxProposalsCount::get(), Error::<T>::MaxProposalsExceeded);
 
 		// Generate the CampaignInfo structure
 		let proposal = CampaignInfo {
@@ -415,7 +410,6 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 			raised: Zero::zero(),
 			contributors_count: Zero::zero(),
 			contributions: Vec::new(),
-			proposal_time: <frame_system::Module<T>>::block_number(),
 			period: period,
 			campaign_start: Zero::zero(),
 			campaign_end: Zero::zero(),
@@ -452,22 +446,16 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		Ok(())
 	}
 
-	/// Ensure proposal is valid
-	fn ensure_valid_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError> {
-		// Check that the Proposal exists and tag it
-		let proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
-		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
-		Ok(())
-	}
-
     /// Approve Proposal by `id` at `now`.
-    fn approve_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
+    fn approve_proposal(id: u32)-> sp_std::result::Result<(), DispatchError> {
 		// Tag the proposal and ensure it is not already approved.
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
 
-		let campaigns = <Campaigns<T>>::get();
-		ensure!(campaigns.len() <= T::MaxCampaignsCount::get(), Error::<T>::MaxCampaignsExceeded);
+		// Get the proposals
+		let campaigns = Campaigns::<T>::iter();
+		// // Ensure max proposals not exceeded
+		// ensure!(campaigns.len() as u32 <= T::MaxCampaignsCount::get(), Error::<T>::MaxCampaignsExceeded);
 
 		// Approve the proposal in CampaignInfo and set it to waiting
 		proposal.is_approved = true;
@@ -488,11 +476,11 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 	
 	/// Reject Proposal by `id` and remove from storage.
-	fn reject_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
+	fn reject_proposal(id: u32)-> sp_std::result::Result<(), DispatchError> {
 		// Check that the Proposal exists and tag it
-		let proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
+		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		// Ensure that the proposal is not already approved
-		Self::ensure_valid_proposal(id).unwrap();
+		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
 
 		// Set the proposal to rejected
 		proposal.is_rejected = true;
@@ -503,11 +491,12 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Remove proposal from storage by `id`
-	fn remove_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
+	fn remove_proposal(id: u32)-> sp_std::result::Result<(), DispatchError> {
 		// Check that the Proposal exists and tag it
 		let proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		// Ensure that the proposal is not already approved
-		Self::ensure_valid_proposal(id).unwrap();
+		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
+		ensure!(proposal.is_rejected, Error::<T>::ProposalAlreadyApproved);
 
 		// Unlock balances and remove the Proposal from the storage.
 		if T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &proposal.origin).is_ok() &&
@@ -521,21 +510,26 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// The Campaign info of `id`
-	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
+	fn campaign_info(id: u32) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		Self::campaigns(id)
 	}
 
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: T::AccountId,
-		id: CampaignId,
+		id: u32,
 		amount: BalanceOf<T>,
 	) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
 		// Ensure campaign is valid
-		Self::ensure_valid_running_campaign(id)?;
+		ensure!(!campaign.is_failed, Error::<T>::CampaignFailed);
+		ensure!(!campaign.is_ended, Error::<T>::CampaignEnded);
+		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
+		ensure!(campaign.is_active, Error::<T>::CampaignNotActive);
 
+		ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
+		ensure!(campaign.period > <frame_system::Pallet<T>>::block_number() - campaign.campaign_start, Error::<T>::CampaignNotActive);
 
 		// Make assurances - minimum contribution & free balance
 		ensure!(amount >= T::MinContribution::get(&campaign.raise_currency), Error::<T>::ContributionTooSmall);
@@ -576,7 +570,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Called when a contribution allocation is claimed
 	fn on_claim_allocation(
 		who: T::AccountId,
-		id: CampaignId,
+		id: u32,
 	) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
@@ -603,7 +597,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Called when a campaign's raised fund is claimed
 	fn on_claim_campaign(
 		who: T::AccountId,
-		id: CampaignId,
+		id: u32,
 	) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
@@ -634,7 +628,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Called when a failed campaign is claimed by the proposer
 	fn on_claim_failed_campaign(
 		who: T::AccountId,
-		id: CampaignId,
+		id: u32,
 	) -> DispatchResult {
 		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
@@ -657,29 +651,15 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		Ok(())
 	}
 
-	/// Ensure campaign is Valid and Running
-	fn ensure_valid_running_campaign(id: CampaignId) -> DispatchResult {
-		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
-		ensure!(!campaign.is_failed, Error::<T>::CampaignFailed);
-		ensure!(!campaign.is_ended, Error::<T>::CampaignEnded);
-		ensure!(!campaign.is_waiting, Error::<T>::InWaitingPeriod);
-		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
-		ensure!(campaign.is_active, Error::<T>::CampaignNotActive);
-
-		ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
-		ensure!(campaign.period > <frame_system::Pallet<T>>::block_number() - campaign.campaign_start, Error::<T>::CampaignNotActive);
-		Ok(())
-	}
-
 	/// Ensure campaign is Valid and Ended
-	fn ensure_ended_campaign(id: CampaignId) -> DispatchResult {
+	fn ensure_ended_campaign(id: u32) -> DispatchResult {
 		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 		Ok(())
 	}
 
 	/// Ensure campaign is Valid and Successfully Ended
-	fn ensure_successfully_ended_campaign(id: CampaignId) -> DispatchResult {
+	fn ensure_successfully_ended_campaign(id: u32) -> DispatchResult {
 		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		ensure!(!campaign.is_failed, Error::<T>::CampaignFailed);
 		ensure!(campaign.is_successful, Error::<T>::CampaignFailed);
@@ -692,7 +672,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Record Successful Campaign by `id`
-	fn on_successful_campaign(now: T::BlockNumber, id: CampaignId) -> DispatchResult {
+	fn on_successful_campaign(now: T::BlockNumber, id: u32) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		
 		// Set to successful and ended
@@ -705,8 +685,6 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		// Tag contributors count
 		campaign.contributors_count = campaign.contributions.len() as u32;
 		
-		// Update campaign storage
-		<Campaigns<T>>::insert(id, campaign);
 
 		// Success count - overflow not managed
 		// Add to total successful campaigns
@@ -715,12 +693,14 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 		// Add to `TotalAmountRaised` in protocol
 		let total_raised = T::MultiCurrency::total_balance(campaign.raise_currency, &campaign.pool);
-		<TotalAmountRaised<T>>::mutate(|total| *total += total_raised);
+		<TotalAmountRaised<T>>::mutate(campaign.raise_currency,  |total| *total += total_raised);
+		// Update campaign storage
+		<Campaigns<T>>::insert(id, campaign);
 		Ok(())
 	}
 
 	/// Record Failed Campaign by `id`
-	fn on_failed_campaign(now: T::BlockNumber, id: CampaignId) -> DispatchResult {
+	fn on_failed_campaign(now: T::BlockNumber, id: u32) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		
 		// Set to failed and ended
@@ -740,7 +720,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 	/// Called when pool is retired
 	/// Only unsuccessful pools are retired
-	fn on_retire(id: CampaignId) -> DispatchResult {
+	fn on_retire(id: u32) -> DispatchResult {
 		// Get campaign in tag
 		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		// Get accounts in tag
@@ -759,5 +739,11 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 			<Campaigns<T>>::remove(id);
 		}
 		Ok(())
+	}
+
+	/// Get amount of contributors/contributions in a campaign
+	fn get_contributors_count(id: u32) -> u32 {
+		let campaign = Self::campaigns(id).unwrap();
+		campaign.contributions.len() as u32
 	}
 }

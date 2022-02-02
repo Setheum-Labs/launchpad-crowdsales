@@ -9,7 +9,6 @@ use sp_std::{
 };
 
 pub type CurrencyId = u32;
-pub type CampaignId = u32;
 pub type Balance = u32;
 
 /// The Structure of a Campaign info.
@@ -46,8 +45,6 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	/// The Campaign contributions
 	/// account_id, contribution, allocation, bool:claimed_allocation
 	pub contributions: Vec<(AccountId, Balance, Balance, bool)>,
-	/// The time when the proposal was made.
-	pub proposal_time: BlockNumber,
 	/// The period that the campaign runs for.
 	pub period: BlockNumber,
 	/// The time when the campaign starts.
@@ -79,7 +76,7 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 /// Abstraction over th Launchpad Proposal system.
 pub trait Proposal<AccountId, BlockNumber> {
 	/// The Campaign Proposal info of `id`
-	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
+	fn proposal_info(id: u32) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: AccountId,
@@ -95,51 +92,49 @@ pub trait Proposal<AccountId, BlockNumber> {
 		goal: Balance,
 		period: BlockNumber,
 	) -> DispatchResult;
-	/// Ensure proposal is valid
-	fn ensure_valid_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
     /// Approve Proposal by `id` at `now`.
-    fn approve_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+    fn approve_proposal(id: u32) -> sp_std::result::Result<(), DispatchError>;
 	/// Reject Proposal by `id` and update storage
-	fn reject_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
-	/// Remove Proposal by `id` and remove from storage
-	fn remove_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+	fn reject_proposal(id: u32) -> sp_std::result::Result<(), DispatchError>;
+	/// Remove Proposal by `id` from storage
+	fn remove_proposal(id: u32) -> sp_std::result::Result<(), DispatchError>;
 }
 
 /// Abstraction over the Launchpad Campaign system.
 pub trait CampaignManager<AccountId, BlockNumber> {
 	/// The Campaign info of `id`
-	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
+	fn campaign_info(id: u32) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: AccountId,
-		id: CampaignId,
+		id: u32,
 		amount: Balance,
 	) -> DispatchResult;
 	/// Called when a contribution allocation is claimed
 	fn on_claim_allocation(
 		who: AccountId,
-		id: CampaignId,
+		id: u32,
 	) -> DispatchResult;
 	/// Called when a campaign's raised fund is claimed
 	fn on_claim_campaign(
 		who: AccountId,
-		id: CampaignId,
+		id: u32,
 	) -> DispatchResult;
 	/// Called when a failed campaign is claimed by the proposer
 	fn on_claim_failed_campaign(
 		who: AccountId,
-		id: CampaignId,
+		id: u32,
 	) -> DispatchResult;
-	/// Ensure campaign is Valid and Running
-	fn ensure_valid_running_campaign(id: CampaignId) -> DispatchResult;
 	/// Ensure campaign is Valid and Ended
-	fn ensure_ended_campaign(id: CampaignId) -> DispatchResult;
+	fn ensure_ended_campaign(id: u32) -> DispatchResult;
 	/// Ensure campaign is Valid and Successfully Ended
-	fn ensure_successfully_ended_campaign(id: CampaignId) -> DispatchResult;
+	fn ensure_successfully_ended_campaign(id: u32) -> DispatchResult;
 	/// Record Successful Campaign by `id`
-	fn on_successful_campaign(id: CampaignId) -> DispatchResult ;
+	fn on_successful_campaign(now: BlockNumber, id: u32) -> DispatchResult ;
 	/// Record Failed Campaign by `id`
-	fn on_failed_campaign(id: CampaignId) -> DispatchResult ;
+	fn on_failed_campaign(now: BlockNumber, id: u32) -> DispatchResult ;
 	/// Called when pool is retired
-	fn on_retire(id: CampaignId)-> DispatchResult;
+	fn on_retire(id: u32)-> DispatchResult;
+	/// Get amount of contributors in a campaign
+	fn get_contributors_count(id: u32) -> u32;
 }
