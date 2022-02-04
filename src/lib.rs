@@ -258,7 +258,7 @@ pub mod module {
 				// If the proposal is rejected, check if to remove it
 				if campaign_info.is_rejected && now >= campaign_info.proposal_retirement_period {
 					// Remove the proposal
-					Self::remove_proposal(campaign_id as u32);
+					Self::remove_proposal(campaign_id).unwrap();
 					count += 1;
 				}
 				break;
@@ -268,28 +268,25 @@ pub mod module {
 			for (campaign_id, campaign_info) in Campaigns::<T>::iter() {
 				// If the campaign is waiting, check if to start it
 				if campaign_info.is_waiting && campaign_info.campaign_start <= now {
-					// Set campaign to active
-					campaign_info.is_waiting = false;
-					campaign_info.is_active = true;
-					// Update campaign storage
-					<Campaigns<T>>::insert(campaign_id, campaign_info);
+					// Activate Campaign
+					Self::activate_campaign(campaign_id).unwrap();
 					count += 1;
 				}
 				// If the campaign is active, check if to end it
 				if campaign_info.is_active && !campaign_info.is_ended{
 					// If campaign is successfull, call on successful campaign
 					if campaign_info.raised >= campaign_info.goal {
-						Self::on_successful_campaign(now, campaign_id);
+						Self::on_successful_campaign(now, campaign_id).unwrap();
 						count += 1;
 					} else if campaign_info.campaign_end <= now && campaign_info.raised < campaign_info.goal {
 						// If campaign is failed, call on failed campaign
-						Self::on_failed_campaign(now, campaign_id);
+						Self::on_failed_campaign(now, campaign_id).unwrap();
 						count += 1;
 					}
 				}
 				// If the campaign reaches retirement period, call on retirement
 				if campaign_info.is_ended && &campaign_info.campaign_retirement_period <= &now {
-					Self::on_retire(campaign_id);
+					Self::on_retire(campaign_id).unwrap();
 					count += 1;
 				}
 				break;
@@ -387,12 +384,6 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let campaign_id = <CampaignsIndex<T>>::get() + 1;
 		<CampaignsIndex<T>>::put(campaign_id);
 
-		// Get the proposals
-		let proposals = Proposals::<T>::iter();
-			
-		// // Ensure max proposals not exceeded
-		// ensure!(proposals.len() as u32 <= T::MaxProposalsCount::get(), Error::<T>::MaxProposalsExceeded);
-
 		// Generate the CampaignInfo structure
 		let proposal = CampaignInfo {
 			origin: origin.clone(),
@@ -451,11 +442,6 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		// Tag the proposal and ensure it is not already approved.
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
-
-		// Get the proposals
-		let campaigns = Campaigns::<T>::iter();
-		// // Ensure max proposals not exceeded
-		// ensure!(campaigns.len() as u32 <= T::MaxCampaignsCount::get(), Error::<T>::MaxCampaignsExceeded);
 
 		// Approve the proposal in CampaignInfo and set it to waiting
 		proposal.is_approved = true;
@@ -606,7 +592,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(!campaign.is_claimed, Error::<T>::CampaignAlreadyClaimed);
 
 		// Ensure campaign is valid
-		Self::ensure_ended_campaign(id)?;
+		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 
 		// Claim the campaign raised funds and transfer to the beneficiary
 		if campaign.is_successful &&
@@ -651,10 +637,16 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		Ok(())
 	}
 
-	/// Ensure campaign is Valid and Ended
-	fn ensure_ended_campaign(id: u32) -> DispatchResult {
-		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
-		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
+	/// Activate a campaign by `id`
+	fn activate_campaign(id: u32) -> DispatchResult {
+		// Ensure campaign exists
+		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+
+		// Set campaign to active
+		campaign.is_waiting = false;
+		campaign.is_active = true;
+		// Update campaign storage
+		<Campaigns<T>>::insert(id, campaign);
 		Ok(())
 	}
 

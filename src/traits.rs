@@ -125,8 +125,8 @@ pub trait CampaignManager<AccountId, BlockNumber> {
 		who: AccountId,
 		id: u32,
 	) -> DispatchResult;
-	/// Ensure campaign is Valid and Ended
-	fn ensure_ended_campaign(id: u32) -> DispatchResult;
+	/// Activate a campaign by `id`
+	fn activate_campaign(id: u32) -> DispatchResult;
 	/// Ensure campaign is Valid and Successfully Ended
 	fn ensure_successfully_ended_campaign(id: u32) -> DispatchResult;
 	/// Record Successful Campaign by `id`

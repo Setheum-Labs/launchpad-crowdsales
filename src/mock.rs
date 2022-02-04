@@ -3,7 +3,7 @@
 #![cfg(test)]
 
 use super::*;
-use frame_support::{construct_runtime, ord_parameter_types, parameter_types};
+use frame_support::{construct_runtime, ord_parameter_types, parameter_types, PalletId};
 use frame_system::EnsureSignedBy;
 use orml_traits::parameter_type_with_key;
 use sp_core::H256;
@@ -24,13 +24,6 @@ pub const TREASURY: AccountId = 0;
 pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
 pub const CHARLIE: AccountId = 3;
-pub const DAVE: AccountId = 4;
-pub const EVE: AccountId = 5;
-pub const FRED: AccountId = 6;
-pub const GREG: AccountId = 7;
-pub const HANA: AccountId = 8;
-pub const IGOR: AccountId = 9;
-pub const JOHN: AccountId = 10;
 
 pub const SETM: CurrencyId = 1;
 pub const SETUSD: CurrencyId = 2;
@@ -114,7 +107,7 @@ parameter_type_with_key! {
 parameter_types! {
 	pub const GetNativeCurrencyId: CurrencyId = SETM;  // Setheum native currency ticker is SETM/
 	pub const GetCommission: (u32, u32) = (10, 100); // 10%
-	pub const SubmissionDeposit: Balance = 20;
+	pub const SubmissionDeposit: Balance = 2;
 	pub const MaxProposalsCount: u32 = 3;
 	pub const MaxCampaignsCount: u32 = 3;
 	pub const MaxActivePeriod: BlockNumber = 20;
@@ -145,8 +138,8 @@ impl Config for Runtime {
 	type PalletId = CrowdsalesPalletId;
 }
 
-pub type Block = sp_runtime::generic::Block<Header, UncheckedExtrinsic>;
-pub type UncheckedExtrinsic = sp_runtime::generic::UncheckedExtrinsic<u32, Call, u32, ()>;
+type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;
+type Block = frame_system::mocking::MockBlock<Runtime>;
 
 construct_runtime!(
 	pub enum Runtime where
@@ -154,35 +147,63 @@ construct_runtime!(
 		NodeBlock = Block,
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
-		System: frame_system::{Pallet, Storage, Call, Config, Event<T>},
-		LaunchPadCrowdsales: crowdsales::{Pallet, Storage, Call, Event<T>},
+		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
+		LaunchPad: crowdsales::{Pallet, Storage, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 	}
 );
 
 pub struct ExtBuilder {
-	_balances: Vec<(AccountId, CurrencyId, Balance)>,
+	balances: Vec<(AccountId, CurrencyId, Balance)>,
 }
 
 impl Default for ExtBuilder {
 	fn default() -> Self {
-		Self {
-			_balances: vec![
-				(ALICE, DOT, 100_000),
-				(ALICE, TEST, 10_000_000),
-				(BOB, DOT, 100_000),
-				(BOB, TEST, 1_000_000),
-				(CHARLIE, SETUSD, 100_000),
-				(DAVE, SETUSD, 100_000),
-				(EVE, SETUSD, 100_000),
-				(FRED, SETUSD, 100_000),
-				(GREG, SETUSD, 100_000),
-				(HANA, SETUSD, 100_000),
-				(IGOR, SETUSD, 100_000),
-				(JOHN, SETUSD, 100_000),
-				(TREASURY, DOT, 100_000),
-				(TREASURY, SETUSD, 100_000),
-			],
+		Self { balances: vec![] }
+	}
+}
+
+impl ExtBuilder {
+	pub fn balances(mut self, balances: Vec<(AccountId, CurrencyId, Balance)>) -> Self {
+		self.balances = balances;
+		self
+	}
+
+	pub fn one_hundred_thousand_for_all(self) -> Self {
+		self.balances(vec![
+			(ALICE, SETM, 100_000),
+			(ALICE, SETUSD, 100_000),
+			(ALICE, DOT, 100_000),
+			(ALICE, TEST, 100_000),
+			(BOB, SETM, 100_000),
+			(BOB, SETUSD, 100_000),
+			(BOB, DOT, 100_000),
+			(BOB, TEST, 100_000),
+			(CHARLIE, SETM, 100_000),
+			(CHARLIE, SETUSD, 100_000),
+			(CHARLIE, DOT, 100_000),
+			(CHARLIE, TEST, 100_000),
+			(TREASURY, SETM, 100_000),
+			(TREASURY, SETUSD, 100_000),
+			(TREASURY, DOT, 100_000),
+			(TREASURY, TEST, 100_000),
+		])
+	}
+
+	pub fn build(self) -> sp_io::TestExternalities {
+		let mut t = frame_system::GenesisConfig::default()
+			.build_storage::<Runtime>()
+			.unwrap();
+
+		orml_tokens::GenesisConfig::<Runtime> {
+			balances: self
+				.balances
+				.into_iter()
+				.collect::<Vec<_>>(),
 		}
+		.assimilate_storage(&mut t)
+		.unwrap();
+
+		t.into()
 	}
 }

@@ -30,9 +30,9 @@ There is a minimum raise that must be made and that is the softcap, it is requir
 
 A Launchpad Campaign has three stages in its lifecycle, they are as follows:
 
-1. **Pre-Funding/Proposal Stage**: The Campaign Creator creates the campaign and sets the Period/TimeCap and HardCap. In this stage, the Campaign Creator must submit the proposal to the Governance Council along with a `SubmissionDeposit` required by the protocol. There is a `MaxProposals` parameter that limits the number of campaigns that can be proposed at any given time. There is a `MaxActivePeriod` that is set on runtime, and all campaigns' TimeCap/`period` must be within the limit of the `MaxActivePeriod`, or else the campaign will not be submitted to the Governance Council.
+1. **Pre-Funding/Proposal Stage**: The Campaign Creator creates the campaign and sets the Period/TimeCap and HardCap. In this stage, the Campaign Creator must submit the proposal to the Governance Council along with a `SubmissionDeposit` required by the protocol.
 
-2. **Waiting Stage**: The Campaign waits for the appropriate time to start the Campaign. The Protocol has a `WaitingPeriod` that is set on runtime, and all campaigns have to wait for that period to start. There is a `MaxCampaigns` parameter that limits the number of campaigns that can be active at any given time, therefore that includes the waiting campaigns.
+2. **Waiting Stage**: The Campaign waits for the appropriate time to start the Campaign. The Protocol has a `WaitingPeriod` that is set on runtime, and all campaigns have to wait for that period to start. 
 
 3. **Funding/Active Stage**: The Campaign can raise funds and sell their tokens to the public in this stage. If the `goal` is reached before the `period` to end the campaign, the campaign will be ended and the funds will be distributed to the Campaign Beneficiary and the Crowd/Contributors.
 
