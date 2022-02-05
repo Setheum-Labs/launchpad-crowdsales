@@ -30,7 +30,7 @@ pub const SETUSD: CurrencyId = 2;
 pub const TEST: CurrencyId = 3;
 pub const DOT: CurrencyId = 4;
 
-mod crowdsales {
+mod launchpad_crowdsales {
 	pub use super::super::*;
 }
 
@@ -148,7 +148,7 @@ construct_runtime!(
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
 		System: frame_system::{Pallet, Call, Storage, Config, Event<T>},
-		LaunchPad: crowdsales::{Pallet, Storage, Call, Event<T>},
+		LaunchPad: launchpad_crowdsales::{Pallet, Storage, Call, Event<T>},
 		Tokens: orml_tokens::{Pallet, Storage, Call, Event<T>},
 	}
 );
