@@ -48,7 +48,7 @@ pub mod module {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
 		/// The Currency for managing assets related to the SERP (Setheum Elastic Reserve Protocol).
-		type MultiCurrency: MultiLockableCurrency<Self::AccountId, CurrencyId = Balance, Balance = Balance>;
+		type MultiCurrency: MultiLockableCurrency<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
 
 		#[pallet::constant]
 		/// Native currency_id.
