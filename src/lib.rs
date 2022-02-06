@@ -338,17 +338,85 @@ pub mod module {
 			Ok(())
 		}
 
-		// Make a contribution
+		// Make a contribution to an active campaign
+		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[transactional]
+		pub fn make_contribution(
+			origin: OriginFor<T>,
+			campaign_id: CampaignId,
+			contribution_amount: BalanceOf<T>,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Self::on_contribution(
+				who.clone(),
+				campaign_id,
+				contribution_amount
+			)?;
+			Ok(())
+		}
+
+		// Claim a contribution allocation
+		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[transactional]
+		pub fn claim_contribution_allocation(
+			origin: OriginFor<T>,
+			campaign_id: CampaignId,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Self::on_claim_allocation(
+				who.clone(),
+				campaign_id,
+			)?;
+			Ok(())
+		}
 		
-		// Claim a contribution
-		
-		// Claim an allocation
-		
-		// Claim a campaign
+		// Claim a campaign's raised funds
+		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[transactional]
+		pub fn claim_campaign_fundraise(
+			origin: OriginFor<T>,
+			campaign_id: CampaignId,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Self::on_claim_campaign(
+				who.clone(),
+				campaign_id,
+			)?;
+			Ok(())
+		}
 		
 		// Approve a proposal - origin must be `UpdateOrigin`
+		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[transactional]
+		pub fn approve_proposal(
+			origin: OriginFor<T>,
+			campaign_id: CampaignId,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Self::on_approve_proposal(
+				campaign_id,
+			)?;
+			Ok(())
+		}
 		
 		// Reject a proposal - origin must be `UpdateOrigin`
+		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[transactional]
+		pub fn reject_proposal(
+			origin: OriginFor<T>,
+			campaign_id: CampaignId,
+		) -> DispatchResult {
+			let who = ensure_signed(origin)?;
+
+			Self::on_reject_proposal(
+				campaign_id,
+			)?;
+			Ok(())
+		}
 	}
 }
 
