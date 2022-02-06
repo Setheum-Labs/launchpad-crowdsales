@@ -395,7 +395,7 @@ pub mod module {
 			origin: OriginFor<T>,
 			campaign_id: CampaignId,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			T::UpdateOrigin::ensure_origin(origin)?;
 
 			Self::on_approve_proposal(
 				campaign_id,
@@ -410,7 +410,7 @@ pub mod module {
 			origin: OriginFor<T>,
 			campaign_id: CampaignId,
 		) -> DispatchResult {
-			let who = ensure_signed(origin)?;
+			T::UpdateOrigin::ensure_origin(origin)?;
 
 			Self::on_reject_proposal(
 				campaign_id,
