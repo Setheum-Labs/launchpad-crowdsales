@@ -16,12 +16,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Init
-      run: rustup install 1.53.0
-           rustup default 1.53.0
-           rustup toolchain install nightly-2021-05-21
-           rustup target add wasm32-unknown-unknown --toolchain nightly-2021-05-21
-           rustup component add clippy
     - name: Build
       run: cargo build --verbose
     - name: Run tests
