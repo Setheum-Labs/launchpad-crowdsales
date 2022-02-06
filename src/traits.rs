@@ -8,8 +8,8 @@ use sp_std::{
 	cmp::{Eq, PartialEq},
 };
 
-pub type CurrencyId = u32;
 pub type CampaignId = u32;
+pub type CurrencyId = u32;
 pub type Balance = u32;
 
 /// The Structure of a Campaign info.
@@ -41,6 +41,8 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	pub goal: Balance,
 	/// The Fundraise Amount raised - HardCap
 	pub raised: Balance,
+	/// The number of contributors to the campaign
+	pub contributors_count: u32,
 	/// The Campaign contributions
 	/// account_id, contribution, allocation, bool:claimed_allocation
 	pub contributions: Vec<(AccountId, Balance, Balance, bool)>,
@@ -48,10 +50,16 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	pub period: BlockNumber,
 	/// The time when the campaign starts.
 	pub campaign_start: BlockNumber,
-	/// The time when the campaign starts.
-	pub retirement_period: BlockNumber,
+	/// The time when the campaign ends.
+	pub campaign_end: BlockNumber,
+	/// The time when the campaign fund retires.
+	pub campaign_retirement_period: BlockNumber,
+	/// The time when a rejected proposal is removed from storage.
+	pub proposal_retirement_period: BlockNumber,
 	/// Is the campaign approved?
 	pub is_approved: bool,
+	/// Is the proposal rejected?
+	pub is_rejected: bool,
 	/// Is the campaign in waiting period?
 	pub is_waiting: bool,
 	/// Is the campaign active?
@@ -85,15 +93,15 @@ pub trait Proposal<AccountId, BlockNumber> {
 		goal: Balance,
 		period: BlockNumber,
 	) -> DispatchResult;
-	/// Ensure proposal is valid
-	fn ensure_valid_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
     /// Approve Proposal by `id` at `now`.
-    fn approve_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
-	/// Reject Proposal by `id` and remove from dtorage
-	fn reject_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+    fn on_approve_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+	/// Reject Proposal by `id` and update storage
+	fn on_reject_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+	/// Remove Proposal by `id` from storage
+	fn remove_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 }
 
-/// Abstraction over th Launchpad Campaign system.
+/// Abstraction over the Launchpad Campaign system.
 pub trait CampaignManager<AccountId, BlockNumber> {
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
@@ -118,20 +126,18 @@ pub trait CampaignManager<AccountId, BlockNumber> {
 		who: AccountId,
 		id: CampaignId,
 	) -> DispatchResult;
-	/// Ensure campaign is Valid and Running
-	fn ensure_valid_running_campaign(id: CampaignId) -> DispatchResult;
-	/// Ensure campaign is Valid and Ended
-	fn ensure_ended_campaign(id: CampaignId) -> DispatchResult;
+	/// Activate a campaign by `id`
+	fn activate_campaign(id: CampaignId) -> DispatchResult;
 	/// Ensure campaign is Valid and Successfully Ended
 	fn ensure_successfully_ended_campaign(id: CampaignId) -> DispatchResult;
 	/// Record Successful Campaign by `id`
-	fn on_successful_campaign(id: CampaignId) -> DispatchResult ;
+	fn on_successful_campaign(now: BlockNumber, id: CampaignId) -> DispatchResult ;
 	/// Record Failed Campaign by `id`
-	fn on_failed_campaign(id: CampaignId) -> DispatchResult ;
-	/// Record Ended Campaign by `id`
-	fn on_ended_campaign(id: CampaignId) -> DispatchResult ;
+	fn on_failed_campaign(now: BlockNumber, id: CampaignId) -> DispatchResult ;
 	/// Called when pool is retired
 	fn on_retire(id: CampaignId)-> DispatchResult;
 	/// Get amount of contributors in a campaign
 	fn get_contributors_count(id: CampaignId) -> u32;
+	/// Get the total amounts raised in protocol
+	fn get_total_amounts_raised() -> Vec<(CurrencyId, Balance)>;
 }
