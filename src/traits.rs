@@ -94,9 +94,9 @@ pub trait Proposal<AccountId, BlockNumber> {
 		period: BlockNumber,
 	) -> DispatchResult;
     /// Approve Proposal by `id` at `now`.
-    fn approve_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+    fn on_approve_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 	/// Reject Proposal by `id` and update storage
-	fn reject_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
+	fn on_reject_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 	/// Remove Proposal by `id` from storage
 	fn remove_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 }
@@ -138,4 +138,6 @@ pub trait CampaignManager<AccountId, BlockNumber> {
 	fn on_retire(id: CampaignId)-> DispatchResult;
 	/// Get amount of contributors in a campaign
 	fn get_contributors_count(id: CampaignId) -> u32;
+	/// Get the total amounts raised in protocol
+	fn get_total_amounts_raised() -> Vec<(CurrencyId, Balance)>;
 }

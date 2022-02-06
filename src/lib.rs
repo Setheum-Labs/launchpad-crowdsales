@@ -31,7 +31,6 @@ pub use traits::{
 };
 pub use module::*;
 
-
 pub(crate) type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 pub(crate) type CurrencyIdOf<T> =
 	<<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
@@ -214,7 +213,7 @@ pub mod module {
 	#[pallet::getter(fn campaign_index)]
 	pub type CampaignsIndex<T: Config> = StorageValue<_, CampaignId, ValueQuery>;
 
-	// Track the number of simultaneous Active Campaigns - ActiveCampaignsIndex
+	// Track the number of simultaneous Active Campaigns - ActiveCampaignsCount
 
 	#[pallet::storage]
 	#[pallet::getter(fn active_campaigns_count)]
@@ -339,19 +338,20 @@ pub mod module {
 			Ok(())
 		}
 
-		/// Make a contribution
+		// Make a contribution
 		
-		/// Claim a contribution
+		// Claim a contribution
 		
-		/// Claim an allocation
+		// Claim an allocation
 		
-		/// Claim a campaign
+		// Claim a campaign
 		
-		/// Approve a proposal - origin must be `UpdateOrigin`
+		// Approve a proposal - origin must be `UpdateOrigin`
 		
-		/// Reject a proposal - origin must be `UpdateOrigin`
+		// Reject a proposal - origin must be `UpdateOrigin`
 	}
 }
+
 
 impl<T: Config> Pallet<T> {
 	/// Get the Launchpad's Treasury  Account.
@@ -448,7 +448,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
     /// Approve Proposal by `id` at `now`.
-    fn approve_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
+    fn on_approve_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
 		// Tag the proposal and ensure it is not already approved.
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
@@ -472,7 +472,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 	
 	/// Reject Proposal by `id` and remove from storage.
-	fn reject_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
+	fn on_reject_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
 		// Check that the Proposal exists and tag it
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		// Ensure that the proposal is not already approved
@@ -747,5 +747,13 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	fn get_contributors_count(id: CampaignId) -> u32 {
 		let campaign = Self::campaigns(id).unwrap();
 		campaign.contributions.len() as u32
+	}
+
+	/// Get the total_amounts_raised for all currencies from `TotalAmountRaised`
+	fn get_total_amounts_raised() -> Vec<(CurrencyId, BalanceOf<T>)> {
+		let total_amounts_raised: Vec<(CurrencyId, BalanceOf<T>)> = <TotalAmountRaised<T>>::iter()
+			.into_iter()
+			.collect::<Vec<(CurrencyId, BalanceOf<T>)>>();
+		total_amounts_raised
 	}
 }
