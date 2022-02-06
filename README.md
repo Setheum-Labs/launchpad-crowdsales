@@ -47,4 +47,4 @@ A successful Launchpad Campaign is one that has raised the HardCap and has sold 
 A failed Launchpad Campaign is one that has not raised the HardCap and has not sold their tokens to the public. Once the `goal`/HardCap is not reached and the `period` to end the campaign has ended, the Campaign is considered failed and the campaign allocation of tokens is refunded to the Campaign Creator and the raised funds are also refunded to the Crowd/Contributors/buyers.
 
 ## License
-Apache License Version 2.0, January 2004
+Apache License Version 2.0
