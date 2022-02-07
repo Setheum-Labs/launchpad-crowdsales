@@ -13,8 +13,10 @@ pub type CurrencyId = u32;
 pub type Balance = u32;
 
 /// The Structure of a Campaign info.
-#[cfg_attr(feature = "std", derive(PartialEq, Eq, Encode, Decode))]
+#[cfg_attr(feature = "std", derive(PartialEq, Eq, Encode, Decode, Debug))]
 pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
+	/// The Campaign Id
+	pub id: CampaignId,
 	/// Campaign Creator
 	pub origin: AccountId,
 	/// Project Name
@@ -76,6 +78,8 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 
 /// Abstraction over th Launchpad Proposal system.
 pub trait Proposal<AccountId, BlockNumber> {
+	/// Get all proposals
+	fn all_proposals() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// The Campaign Proposal info of `id`
 	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign

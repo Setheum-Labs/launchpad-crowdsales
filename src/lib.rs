@@ -437,7 +437,17 @@ impl<T: Config> Pallet<T> {
 impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// The Campaign Proposal info of `id`
 	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
-		Self::proposals(id)
+		<Proposals<T>>::get(id)
+	}
+
+	/// Get all proposals
+	fn all_proposals() -> Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
+		let proposals = Proposals::<T>::iter().collect::<Vec<_>>();
+		let all_proposals = proposals.into_iter().map(|(id, _)| {
+			let campaign_info = Self::proposal_info(id).unwrap();
+			campaign_info
+		}).collect::<Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>>>();
+		all_proposals
 	}
 
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
@@ -464,6 +474,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 		// Generate the CampaignInfo structure
 		let proposal = CampaignInfo {
+			id: campaign_id,
 			origin: origin.clone(),
 			project_name: project_name,
 			project_logo: project_logo,
@@ -575,7 +586,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
-		Self::campaigns(id)
+		<Campaigns<T>>::get(id)
 	}
 
 	/// Called when a contribution is received.
