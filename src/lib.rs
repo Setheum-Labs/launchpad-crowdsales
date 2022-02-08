@@ -140,6 +140,8 @@ pub mod module {
 		GoalBelowMinimumRaise,
 		/// The goal is not equal to allocation
 		GoalNotAllignedWithAllocation,
+		/// The Submission Deposit Funds are insufficient
+		InsufficientBalance,
 		/// Wrong Currency Type in use.
 		InvalidCurrencyType,
 		/// The fund index specified does not exist.
@@ -156,6 +158,8 @@ pub mod module {
 		MaxProposalsExceeded,
 		/// You cannot withdraw funds because you have not contributed any.
 		NoContribution,
+		/// No Proposals in the system
+		NoProposals,
 		/// Proposal is already approved.
 		ProposalAlreadyApproved,
 		/// Proposal is not in the list of proposals.
@@ -171,7 +175,13 @@ pub mod module {
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", CurrencyId = "CurrencyId")]
 	pub enum Event<T: Config> {
 		/// Created Proposal \[campaign_id\]
-		CreatedProposal(CampaignId),
+		CreatedProposal(CampaignId, CampaignInfoOf<T>),
+		/// Contributed to a campaign \[contributor, campaign_id, amount\]
+		Contributed(T::AccountId, CampaignId, BalanceOf<T>),
+		/// Claim contribution allocation \[contributor, campaign_id, amount\]
+		ClaimedContributionAlloc(T::AccountId, CampaignId, BalanceOf<T>),
+		/// Claimed Funds Raised \[claimant_account_id, campaign_id, amount_claimed\]
+		ClaimedFundraise(T::AccountId, CampaignId, BalanceOf<T>),
 		/// Rejected Proposal \[campaign_id\]
 		RejectedProposal(CampaignId),
 		/// Approved Proposal \[campaign_id\]
@@ -184,8 +194,6 @@ pub mod module {
 		EndedCampaignUnsuccessful(CampaignId),
 		/// Contributed to Campaign \[campaign_id, contribution_amount\]
 		ContributedToCampaign(CampaignId, BalanceOf<T>),
-		/// Claimed Funds Raised \[claimant_account_id, campaign_id, amount_claimed\]
-		ClaimedFundraise(T::AccountId, CampaignId, BalanceOf<T>),
 		/// Claimed Contribution Allocation \[claimant_account_id, campaign_id, allocation_claimed\]
 		ClaimedAllocation(T::AccountId, CampaignId, BalanceOf<T>),
 		/// Dissolved Unclaimed Funds \[amount, campaign_id, now\]
@@ -341,7 +349,7 @@ pub mod module {
 		// Make a contribution to an active campaign
 		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
 		#[transactional]
-		pub fn make_contribution(
+		pub fn contribute(
 			origin: OriginFor<T>,
 			campaign_id: CampaignId,
 			contribution_amount: BalanceOf<T>,
@@ -353,6 +361,7 @@ pub mod module {
 				campaign_id,
 				contribution_amount
 			)?;
+			Self::deposit_event(Event::Contributed(who, campaign_id, contribution_amount));
 			Ok(())
 		}
 
@@ -385,6 +394,9 @@ pub mod module {
 				who.clone(),
 				campaign_id,
 			)?;
+
+			let campaign = Self::campaigns(campaign_id).ok_or(Error::<T>::CampaignNotFound)?;
+			Self::deposit_event(Event::ClaimedFundraise(who, campaign_id, campaign.raised));
 			Ok(())
 		}
 		
@@ -400,6 +412,8 @@ pub mod module {
 			Self::on_approve_proposal(
 				campaign_id,
 			)?;
+			
+			Self::deposit_event(Event::ApprovedProposal(campaign_id));
 			Ok(())
 		}
 		
@@ -415,6 +429,8 @@ pub mod module {
 			Self::on_reject_proposal(
 				campaign_id,
 			)?;
+
+			Self::deposit_event(Event::RejectedProposal(campaign_id));
 			Ok(())
 		}
 	}
@@ -442,12 +458,12 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 	/// Get all proposals
 	fn all_proposals() -> Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
-		let proposals = Proposals::<T>::iter().collect::<Vec<_>>();
-		let all_proposals = proposals.into_iter().map(|(id, _)| {
-			let campaign_info = Self::proposal_info(id).unwrap();
-			campaign_info
-		}).collect::<Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>>>();
-		all_proposals
+		let proposals = Proposals::<T>::iter().into_iter();
+		let mut proposals_vec: Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> = Vec::new();
+		for (id, proposal) in proposals {
+			proposals_vec.push(proposal);
+		}
+		proposals_vec
 	}
 
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
@@ -505,24 +521,18 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 			is_claimed: false,
 		};
 
-		// Try check available balance for Submission Deposit
-		assert!(
-			T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &origin) >= T::SubmissionDeposit::get(),
-			"Account do not have enough balance for Submission Deposit"
-		);
-		// Try check available balance for Crowd Allocation
-		assert!(
-			T::MultiCurrency::free_balance(sale_token, &origin) >= crowd_allocation,
-			"Account do not have enough balance for Crowd Allocation"
-		);
-
-		// Initiate the Proposal
-		if T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &origin, T::SubmissionDeposit::get()).is_ok() &&
-			T::MultiCurrency::transfer(sale_token, &origin, &Self::campaign_pool(campaign_id), crowd_allocation).is_ok() {
-				// Add the CampaignInfo to the proposals
-				<Proposals<T>>::insert(campaign_id, proposal);
+		if T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &origin) >= T::SubmissionDeposit::get() &&
+		T::MultiCurrency::free_balance(sale_token, &origin) >= crowd_allocation {
+			if T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &origin, T::SubmissionDeposit::get()).is_ok() &&
+				T::MultiCurrency::transfer(sale_token, &origin, &Self::campaign_pool(campaign_id), crowd_allocation).is_ok() {
+					<Proposals<T>>::insert(campaign_id, proposal.clone());
+			}
+			
+		} else {
+			return Err(Error::<T>::InsufficientBalance.into());
 		}
-
+		
+		Self::deposit_event(Event::CreatedProposal(campaign_id, proposal.clone()));
 		Ok(())
 	}
 
@@ -603,9 +613,6 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
 		ensure!(campaign.is_active, Error::<T>::CampaignNotActive);
 
-		ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
-		ensure!(campaign.period > <frame_system::Pallet<T>>::block_number() - campaign.campaign_start, Error::<T>::CampaignNotActive);
-
 		// Make assurances - minimum contribution & free balance
 		ensure!(amount >= T::MinContribution::get(&campaign.raise_currency), Error::<T>::ContributionTooSmall);
 		ensure!(T::MultiCurrency::free_balance(campaign.raise_currency, &who) >= amount, Error::<T>::ContributionCurrencyNotEnough);
@@ -662,7 +669,15 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 					//set claimed to true - allocation claimed
 					*claimed = true;
 					//complete claim by adding campaign update to storage
-					<Campaigns<T>>::insert(id, campaign);
+					<Campaigns<T>>::insert(id, campaign);	
+
+					let campaign2 = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+					for (contributor2, _, allocation2, claimed2) in campaign2.contributions.iter() {
+						if contributor2 == &who && *claimed2 == false {		
+							Self::deposit_event(Event::ClaimedContributionAlloc(who, id, *allocation2));
+						}
+						break;
+					}
 				}
 			break;
 		}

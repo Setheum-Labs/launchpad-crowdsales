@@ -36,6 +36,7 @@ mod launchpad_crowdsales {
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
+	pub MaxLocks: u32 = 100_000;
 }
 
 impl frame_system::Config for Runtime {
@@ -78,7 +79,7 @@ impl orml_tokens::Config for Runtime {
 	type WeightInfo = ();
 	type ExistentialDeposits = ExistentialDeposits;
 	type OnDust = ();
-	type MaxLocks = ();
+	type MaxLocks = MaxLocks;
 	type DustRemovalWhitelist = ();
 }
 
@@ -107,11 +108,11 @@ parameter_type_with_key! {
 parameter_types! {
 	pub const GetNativeCurrencyId: CurrencyId = SETM;  // Setheum native currency ticker is SETM/
 	pub const GetCommission: (u32, u32) = (10, 100); // 10%
-	pub const SubmissionDeposit: Balance = 2;
+	pub const SubmissionDeposit: Balance = 101;
 	pub const MaxProposalsCount: u32 = 3;
 	pub const MaxCampaignsCount: u32 = 3;
 	pub const MaxActivePeriod: BlockNumber = 20;
-	pub const CampaignStartDelay: BlockNumber = 5;
+	pub const CampaignStartDelay: BlockNumber = 20;
 	pub const RetirementPeriod: BlockNumber = 20;
 	pub const CrowdsalesPalletId: PalletId = PalletId(*b"set/help");
 }

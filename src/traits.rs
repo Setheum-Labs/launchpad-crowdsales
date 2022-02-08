@@ -13,7 +13,7 @@ pub type CurrencyId = u32;
 pub type Balance = u32;
 
 /// The Structure of a Campaign info.
-#[cfg_attr(feature = "std", derive(PartialEq, Eq, Encode, Decode, Debug))]
+#[cfg_attr(feature = "std", derive(PartialEq, Eq, Encode, Decode, Debug, Clone))]
 pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	/// The Campaign Id
 	pub id: CampaignId,
