@@ -460,7 +460,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	fn all_proposals() -> Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		let proposals = Proposals::<T>::iter().into_iter();
 		let mut proposals_vec: Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> = Vec::new();
-		for (id, proposal) in proposals {
+		for (_, proposal) in proposals {
 			proposals_vec.push(proposal);
 		}
 		proposals_vec
@@ -621,25 +621,28 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		if T::MultiCurrency::transfer(campaign.raise_currency, &who, &campaign.pool, amount).is_ok() {
 			
 			// Update Campaign raised funds and contributors data
-			campaign.raised += amount;
 			
 			let allocated = amount / campaign.token_price;
 
 			// Check if contributor already exists in contributions list
 			let mut found = false;
+			// if campaign.contributions exists, check for who's contribution
+			
 			for (contributor, contribution, allocation, _) in campaign.contributions.iter_mut() {
 				if contributor == &who {
 
 					found = true;
 					*contribution += amount;
 					*allocation += allocated;
+					campaign.raised += amount;
 				}
 				break;
 			}
 			if !found {
 				campaign.contributions.push((who, amount, allocated, false));
+				campaign.raised += amount;
 			}
-			
+
 			// Tag contributors count
 			campaign.contributors_count = campaign.contributions.len() as u32;
 
@@ -763,7 +766,6 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
 
 		ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
-		ensure!(campaign.period > <frame_system::Pallet<T>>::block_number() - campaign.campaign_start, Error::<T>::CampaignNotActive);
 		Ok(())
 	}
 
@@ -788,8 +790,8 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		<SuccessfulCampaignsCount<T>>::put(success_count);
 
 		// Add to `TotalAmountRaised` in protocol
-		let total_raised = T::MultiCurrency::total_balance(campaign.raise_currency, &campaign.pool);
-		<TotalAmountRaised<T>>::mutate(campaign.raise_currency,  |total| *total += total_raised);
+		<TotalAmountRaised<T>>::mutate(campaign.raise_currency,  |total| *total += campaign.raised);
+		
 		// Update campaign storage
 		<Campaigns<T>>::insert(id, campaign);
 		Ok(())
@@ -827,7 +829,9 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		// Get the total amount of sale_token in the pool
 		let total_sale_token = T::MultiCurrency::total_balance(campaign.sale_token, &campaign.pool);
 		
-		// Dissolve unclaimed Fundraise
+		let transfer_allocation = T::MultiCurrency::transfer(campaign.raise_currency, &campaign.pool, &treasury, total_raise_currency).is_ok();
+		let transfer_raise = T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &treasury, total_sale_token).is_ok();
+		// Dissolve unclaimed Fundraise 
 		if T::MultiCurrency::transfer(campaign.raise_currency, &campaign.pool, &treasury, total_raise_currency).is_ok() &&
 			T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &treasury, total_sale_token).is_ok() {
 				
