@@ -13,8 +13,10 @@ pub type CurrencyId = u32;
 pub type Balance = u32;
 
 /// The Structure of a Campaign info.
-#[cfg_attr(feature = "std", derive(PartialEq, Eq, Encode, Decode))]
+#[cfg_attr(feature = "std", derive(PartialEq, Eq, Encode, Decode, Debug, Clone))]
 pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
+	/// The Campaign Id
+	pub id: CampaignId,
 	/// Campaign Creator
 	pub origin: AccountId,
 	/// Project Name
@@ -78,6 +80,8 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 pub trait Proposal<AccountId, BlockNumber> {
 	/// The Campaign Proposal info of `id`
 	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
+	/// Get all proposals
+	fn all_proposals() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: AccountId,
@@ -105,6 +109,8 @@ pub trait Proposal<AccountId, BlockNumber> {
 pub trait CampaignManager<AccountId, BlockNumber> {
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
+	/// Get all proposals
+	fn all_campaigns() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: AccountId,
