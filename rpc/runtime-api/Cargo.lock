@@ -863,6 +863,7 @@ dependencies = [
  "launchpad-crowdsales",
  "parity-scale-codec",
  "sp-api",
+ "sp-runtime",
  "sp-std",
 ]
 
