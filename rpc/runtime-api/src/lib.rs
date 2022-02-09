@@ -9,7 +9,7 @@
 use codec::Codec;
 use sp_runtime::traits::MaybeDisplay;
 use sp_std::prelude::*;
-use launchpad_crowdsales::traits::CampaignInfo;
+use launchpad_crowdsales::traits::{CampaignInfo, CampaignId};
 
 // Here we declare the runtime API. It is implemented it the `impl` block in
 // runtime amalgamator file (the `runtime/src/lib.rs`)
@@ -21,7 +21,7 @@ sp_api::decl_runtime_apis! {
 		CurrencyId: Codec + MaybeDisplay,
 	{
 		// Get the campaign info for a given proposal's campaign id.
-		fn get_proposal(campaign_id: CampaignId) -> Option<CampaignInfo>;
+		fn get_proposal(campaign_id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
 		// Get all the proposals.
 		fn get_all_proposals() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>>;
 		// Get the campaign info for a given campaign's campaign id.
