@@ -78,10 +78,10 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 
 /// Abstraction over th Launchpad Proposal system.
 pub trait Proposal<AccountId, BlockNumber> {
-	/// Get all proposals
-	fn all_proposals() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// The Campaign Proposal info of `id`
 	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
+	/// Get all proposals
+	fn all_proposals() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: AccountId,
@@ -109,6 +109,8 @@ pub trait Proposal<AccountId, BlockNumber> {
 pub trait CampaignManager<AccountId, BlockNumber> {
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<AccountId, Balance, BlockNumber>>;
+	/// Get all proposals
+	fn all_campaigns() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>>;
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: AccountId,

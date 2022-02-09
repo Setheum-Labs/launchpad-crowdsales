@@ -278,7 +278,7 @@ pub mod module {
 					count += 1;
 				}
 				// If the campaign is active, check if to end it
-				if campaign_info.is_active && !campaign_info.is_ended{
+				if campaign_info.is_active && !campaign_info.is_ended {
 					// If campaign is successfull, call on successful campaign
 					if campaign_info.raised >= campaign_info.goal {
 						Self::on_successful_campaign(now, campaign_id).unwrap();
@@ -608,6 +608,16 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		<Campaigns<T>>::get(id)
+	}
+
+	/// Get all campaigns
+	fn all_campaigns() -> Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
+		let campaigns = Campaigns::<T>::iter().into_iter();
+		let mut campaigns_vec: Vec<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> = Vec::new();
+		for (_, proposal) in campaigns {
+			campaigns_vec.push(proposal);
+		}
+		campaigns_vec
 	}
 
 	/// Called when a contribution is received.
