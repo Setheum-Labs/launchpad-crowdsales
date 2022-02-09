@@ -521,13 +521,20 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 			is_claimed: false,
 		};
 
+		// try checks
+		let try_set_lock = T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &origin, T::SubmissionDeposit::get()).is_ok();
+		let try_make_transfer = T::MultiCurrency::transfer(sale_token, &origin, &Self::campaign_pool(campaign_id), crowd_allocation).is_ok() ;
+
 		if T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &origin) >= T::SubmissionDeposit::get() &&
-		T::MultiCurrency::free_balance(sale_token, &origin) >= crowd_allocation {
-			if T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &origin, T::SubmissionDeposit::get()).is_ok() &&
-				T::MultiCurrency::transfer(sale_token, &origin, &Self::campaign_pool(campaign_id), crowd_allocation).is_ok() {
+			T::MultiCurrency::free_balance(sale_token, &origin) >= crowd_allocation {
+				if try_set_lock && try_make_transfer {
+					// set lock
+					T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &origin, T::SubmissionDeposit::get()).unwrap();
+					// make transfer
+					T::MultiCurrency::transfer(sale_token, &origin, &Self::campaign_pool(campaign_id), crowd_allocation).unwrap();
+					// insert proposal
 					<Proposals<T>>::insert(campaign_id, proposal.clone());
-			}
-			
+				}
 		} else {
 			return Err(Error::<T>::InsufficientBalance.into());
 		}
@@ -583,11 +590,15 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
 		ensure!(proposal.is_rejected, Error::<T>::ProposalAlreadyApproved);
 
+		let try_remove_lock = T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &proposal.origin).is_ok();
+		let try_refund_transfer = T::MultiCurrency::transfer( proposal.sale_token, &proposal.pool, &proposal.origin, proposal.crowd_allocation).is_ok();
 		// Unlock balances and remove the Proposal from the storage.
-		if T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &proposal.origin).is_ok() &&
-			T::MultiCurrency::transfer( proposal.sale_token, &proposal.pool, &proposal.origin, proposal.crowd_allocation).is_ok() {
-				// Remove from proposals
-				<Proposals<T>>::remove(id);
+		if try_remove_lock && try_refund_transfer {
+			// remove lock and refund proposal
+			T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &proposal.origin).unwrap();
+			T::MultiCurrency::transfer( proposal.sale_token, &proposal.pool, &proposal.origin, proposal.crowd_allocation).unwrap();
+			// Remove from proposals
+			<Proposals<T>>::remove(id);
 		};
 		Ok(())
 	}
@@ -618,10 +629,10 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(T::MultiCurrency::free_balance(campaign.raise_currency, &who) >= amount, Error::<T>::ContributionCurrencyNotEnough);
 		
 		// Initiate the Contribution
-		if T::MultiCurrency::transfer(campaign.raise_currency, &who, &campaign.pool, amount).is_ok() {
-			
-			// Update Campaign raised funds and contributors data
-			
+		let transfer_contribution = T::MultiCurrency::transfer(campaign.raise_currency, &who, &campaign.pool, amount).is_ok();
+		if transfer_contribution {
+			// Transfer contribution and tag allocation
+			T::MultiCurrency::transfer(campaign.raise_currency, &who, &campaign.pool, amount).unwrap();
 			let allocated = amount / campaign.token_price;
 
 			// Check if contributor already exists in contributions list
@@ -658,6 +669,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		id: CampaignId,
 	) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+		let  campaign_p = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
 		// Check if the contributor exists in the contributions of the campaign, if not return error
 		ensure!(campaign.contributions.iter().any(|(contributor, _, _, _)| *contributor == who), Error::<T>::ContributionNotFound);
@@ -667,21 +679,25 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 		// Check if the contributor exists and transfer allocated from pool to contributor
 		for (contributor, _, allocation, claimed) in campaign.contributions.iter_mut() {
-			if contributor == &who && *claimed == false && 
-				T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &who, *allocation).is_ok() {
-					//set claimed to true - allocation claimed
-					*claimed = true;
-					//complete claim by adding campaign update to storage
-					<Campaigns<T>>::insert(id, campaign);	
+			let transfer_allocation = T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &who, *allocation).is_ok();
 
-					let campaign2 = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
-					for (contributor2, _, allocation2, claimed2) in campaign2.contributions.iter() {
-						if contributor2 == &who && *claimed2 == false {		
-							Self::deposit_event(Event::ClaimedContributionAlloc(who, id, *allocation2));
-						}
-						break;
+			if contributor == &who && *claimed == false && transfer_allocation {
+				// set claimed to true - allocation claimed
+				*claimed = true;
+				// complete claim by adding campaign update to storage
+				<Campaigns<T>>::insert(id, campaign);
+
+				for (contributor_p, _, allocation_p, claimed_p) in campaign_p.contributions.iter() {
+					if contributor_p == &who && *claimed_p == false {		
+						// transfer allocation
+						T::MultiCurrency::transfer(campaign_p.sale_token, &campaign_p.pool, &who, *allocation_p).unwrap();
+						Self::deposit_event(Event::ClaimedContributionAlloc(who, id, *allocation_p));
 					}
+
+					break;
 				}
+			}
+
 			break;
 		}
 		Ok(())
@@ -702,15 +718,21 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 
 		// Claim the campaign raised funds and transfer to the beneficiary
-		if campaign.is_successful &&
+		let transfer_claim = T::MultiCurrency::transfer(
+			campaign.raise_currency,
+			&campaign.pool,
+			&campaign.beneficiary,
+			campaign.raised
+		)
+		.is_ok();
+
+		if campaign.is_successful && transfer_claim {
 			T::MultiCurrency::transfer(
 				campaign.raise_currency,
 				&campaign.pool,
 				&campaign.beneficiary,
 				campaign.raised
-			)
-			.is_ok()
-		{
+			).unwrap();
 			// Campaign is claimed, update storage
 			campaign.is_claimed = true;
 			<Campaigns<T>>::insert(id, campaign);
@@ -735,11 +757,14 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		// Get the total amount of sale_token in the pool
 		let total_sale_token = T::MultiCurrency::total_balance(campaign.sale_token, &campaign.pool);
 		
+		let remove_lock = T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).is_ok();
+		let transfer_claim = T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).is_ok();
 		// Unlock balances and remove the Proposal from the storage.
-		if T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).is_ok() &&
-			T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).is_ok() {
-				// Update campaign in campaigns storage
-				<Campaigns<T>>::insert(id, campaign);
+		if remove_lock && transfer_claim {
+			T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).unwrap();
+			T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).unwrap();
+			// Update campaign in campaigns storage
+			<Campaigns<T>>::insert(id, campaign);
 		};
 		Ok(())
 	}
@@ -832,9 +857,9 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let transfer_allocation = T::MultiCurrency::transfer(campaign.raise_currency, &campaign.pool, &treasury, total_raise_currency).is_ok();
 		let transfer_raise = T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &treasury, total_sale_token).is_ok();
 		// Dissolve unclaimed Fundraise 
-		if T::MultiCurrency::transfer(campaign.raise_currency, &campaign.pool, &treasury, total_raise_currency).is_ok() &&
-			T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &treasury, total_sale_token).is_ok() {
-				
+		if transfer_allocation && transfer_raise {
+			T::MultiCurrency::transfer(campaign.raise_currency, &campaign.pool, &treasury, total_raise_currency).unwrap();	
+			T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &treasury, total_sale_token).unwrap();
 			// Remove campaign from campaigns storage
 			<Campaigns<T>>::remove(id);
 		}
