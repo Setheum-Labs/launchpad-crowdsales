@@ -1,4 +1,5 @@
 # launchpad-crowdsales
+
 Subatrate pallet to raise funds on launchpad crowdsales
 
 ## Module Overview
@@ -20,6 +21,7 @@ There are four participants in a LaunchPad Crowdsales Protocol, the Campaign Cre
 * The Governance Council is the people who manage the campaign and the protocol.
 
 ## How the protocol Works
+
 ![Screenshot from 2022-01-23 13-31-41](https://user-images.githubusercontent.com/15086345/150666483-3f9a07b3-2e76-46f9-97f9-729679c03f1c.png)
 The HighEnd LaunchPad Protocol lets teams/projects/campaigns achieve two (2) major goals at once, it raises money, and and sell their tokens to the public.
 The protocol uses `MultiCurrency` to let the Campaign Creator choose which currency to raise/sell their tokens for. Therefore,  Campaign Creator can choose to raise funds in any currency available on the chain.
@@ -49,4 +51,3 @@ A failed Launchpad Campaign is one that has not raised the `goal` and has not so
 ## License
 
 Apache License Version 2.0
-
