@@ -14,8 +14,6 @@ sp-api = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
 
-launchpad-crowdsales = {version = "0.1.0", path =  "../../", default-features = false}
-
 [features]
 default = ["std"]
 std = [
