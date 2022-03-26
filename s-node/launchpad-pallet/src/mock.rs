@@ -11,13 +11,10 @@ use sp_runtime::{
 	testing::Header,
 	traits::IdentityLookup,
 };
+use primitives::{Amount, Balance, TokenSymbol};
 
 pub type AccountId = u128;
-pub type Amount = i128;
-pub type Balance = u32;
 pub type BlockNumber = u64;
-pub type CurrencyId = u32;
-
 // The network Treasury account.
 pub const TREASURY: AccountId = 0;
 // Mock accounts.
@@ -25,10 +22,10 @@ pub const ALICE: AccountId = 1;
 pub const BOB: AccountId = 2;
 pub const CHARLIE: AccountId = 3;
 
-pub const SETM: CurrencyId = 1;
-pub const SETUSD: CurrencyId = 2;
-pub const TEST: CurrencyId = 3;
-pub const DOT: CurrencyId = 4;
+pub const SETM: CurrencyId = CurrencyId::Token(TokenSymbol::SETM);
+pub const SETUSD: CurrencyId = CurrencyId::Token(TokenSymbol::SETUSD);
+pub const TEST: CurrencyId = CurrencyId::Token(TokenSymbol::SETR);
+pub const DOT: CurrencyId = CurrencyId::Token(TokenSymbol::DNAR);
 
 mod launchpad_crowdsales {
 	pub use super::super::*;
@@ -36,7 +33,6 @@ mod launchpad_crowdsales {
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub MaxLocks: u32 = 100_000;
 }
 
 impl frame_system::Config for Runtime {
@@ -79,7 +75,7 @@ impl orml_tokens::Config for Runtime {
 	type WeightInfo = ();
 	type ExistentialDeposits = ExistentialDeposits;
 	type OnDust = ();
-	type MaxLocks = MaxLocks;
+	type MaxLocks = ();
 	type DustRemovalWhitelist = ();
 }
 

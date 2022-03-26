@@ -16,6 +16,10 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::*, ensure_signed};
 use orml_traits::{GetByKey, MultiCurrency, MultiLockableCurrency, LockIdentifier};
+use primitives::{Balance, CampaignId, CurrencyId};
+use support::{
+	CampaignInfo, CampaignManager, Proposal,
+};
 
 use sp_std::{
 	vec::Vec,
@@ -24,11 +28,7 @@ use sp_runtime::{traits::{AccountIdConversion, Zero}, DispatchResult};
 
 mod mock;
 mod tests;
-pub mod traits;
 
-pub use traits::{
-	Balance, CampaignId, CampaignInfo, CampaignManager, CurrencyId, Proposal,
-};
 pub use module::*;
 
 pub(crate) type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
@@ -105,7 +105,6 @@ pub mod module {
 		#[pallet::constant]
 		/// The Airdrop module pallet id, keeps airdrop funds.
 		type PalletId: Get<PalletId>;                                                                                                                              
-
 	}
 
 	#[pallet::error]
@@ -158,8 +157,6 @@ pub mod module {
 		MaxProposalsExceeded,
 		/// You cannot withdraw funds because you have not contributed any.
 		NoContribution,
-		/// No Proposals in the system
-		NoProposals,
 		/// Proposal is already approved.
 		ProposalAlreadyApproved,
 		/// Proposal is not in the list of proposals.
