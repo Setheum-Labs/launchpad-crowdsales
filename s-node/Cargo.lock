@@ -8029,6 +8029,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "hex",
  "hex-literal 0.3.1",
+ "launchpad-crowdsales",
  "libsecp256k1",
  "log",
  "module-airdrop",

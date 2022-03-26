@@ -80,6 +80,8 @@ pallet-authority-discovery = { git = "https://github.com/paritytech/substrate", 
 pallet-identity = { git = "https://github.com/paritytech/substrate", default-features = false, branch = "polkadot-v0.9.10" }
 
 # local dependencies
+# launchpad-crowdsales
+launchpad-pallet = { package = "launchpad-crowdsales", path = "../launchpad-pallet", default-features = false }
 
 orml-auction = { path = "../lib-orml/auction", default-features = false }
 orml-authority = { path = "../lib-orml/authority", default-features = false }
