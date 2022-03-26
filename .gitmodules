@@ -1,0 +1,3 @@
+[submodule "s-node"]
+	path = s-node
+	url = https://github.com/Setheum-Labs/Setheum
