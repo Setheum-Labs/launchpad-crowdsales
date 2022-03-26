@@ -9,6 +9,8 @@ members = [
     'runtime',
 	"runtime/common",
     'primitives',
+	# Launchpad Crowdsales Pallet
+	"launchpad-pallet",
 	# SERML Modules
 	"lib-serml/core/airdrop",
 	# "lib-serml/core/atomic-swap",
