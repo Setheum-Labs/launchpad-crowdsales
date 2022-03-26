@@ -21,4 +21,4 @@ jobs:
     - name: Run tests
       run: cd pallet && cargo test --verbose
     - name: Node
-      run: cd s-node && make build --release
+      run: cd s-node && make build
