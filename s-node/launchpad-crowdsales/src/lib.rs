@@ -15,11 +15,10 @@ use frame_support::{
 	pallet_prelude::*, transactional, PalletId, traits::Get, ensure
 };
 use frame_system::{pallet_prelude::*, ensure_signed};
+
 use orml_traits::{GetByKey, MultiCurrency, MultiLockableCurrency, LockIdentifier};
-use primitives::{Balance, CampaignId, CurrencyId};
-use support::{
-	CampaignInfo, CampaignManager, Proposal,
-};
+use primitives::{Balance, CampaignId, CampaignInfo, CurrencyId};
+use support::{CampaignManager, Proposal};
 
 use sp_std::{
 	vec::Vec,
@@ -38,6 +37,7 @@ pub(crate) type CampaignInfoOf<T> =
 	CampaignInfo<<T as frame_system::Config>::AccountId, BalanceOf<T>, <T as frame_system::Config>::BlockNumber>;
 
 pub const LAUNCHPAD_LOCK_ID: LockIdentifier = *b"set/lpad";
+
 #[frame_support::pallet]
 pub mod module {
 	use super::*;
@@ -448,9 +448,11 @@ impl<T: Config> Pallet<T> {
 }
 
 impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
+	type CampaignId = CampaignId;
+	
 	/// The Campaign Proposal info of `id`
 	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
-		<Proposals<T>>::get(id)
+		Self::proposals(id)
 	}
 
 	/// Get all proposals
@@ -602,9 +604,11 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 }
 
 impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
+	type CampaignId = CampaignId;
+
 	/// The Campaign info of `id`
 	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
-		<Campaigns<T>>::get(id)
+		Self::campaigns(id)
 	}
 
 	/// Get all campaigns

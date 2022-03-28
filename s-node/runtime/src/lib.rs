@@ -1477,6 +1477,64 @@ impl pallet_tips::Config for Runtime {
 	type WeightInfo = ();
 }
 
+
+// Launchpad Crowdsales Pallet
+parameter_type_with_key! {
+	pub MinRaise: |currency_id: CurrencyId| -> Balance {
+		match currency_id {
+			&SETUSD => 100 * dollar(SETUSD),
+			&SETR => 100 * dollar(SETR),
+			&SERP => 100 * dollar(SERP),
+			&HELP => 100 * dollar(HELP),
+			&DNAR => 100 * dollar(DNAR),
+			&SETM => 100 * dollar(SETM),
+			_ => 0,
+		}
+	};
+}
+parameter_type_with_key! {
+	pub MinContribution: |currency_id: CurrencyId| -> Balance {
+		match currency_id {
+			&SETUSD => 10 * cent(SETUSD),
+			&SETR => 10 * cent(SETR),
+			&SERP => 10 * cent(SERP),
+			&HELP => 10 * cent(HELP),
+			&DNAR => 10 * cent(DNAR),
+			&SETM => 10 * cent(SETM),
+			_ => 0,
+		}
+	};
+}
+parameter_types! {
+	pub const GetCommission: (u32, u32) = (10, 100); // 10%
+	pub  SubmissionDeposit: Balance = 10 * dollar(HELP);
+	pub const MaxProposalsCount: u32 = 50;
+	pub const MaxCampaignsCount: u32 = 100;
+	pub const MaxActivePeriod: BlockNumber = 30  * DAYS;
+	pub const CampaignStartDelay: BlockNumber = 3 * DAYS;
+	pub const CampaignRetirementPeriod: BlockNumber = 21  * DAYS;
+	pub const ProposalRetirementPeriod: BlockNumber = 15  * DAYS;
+	pub const CrowdsalesPalletId: PalletId = PalletId(*b"set/help");
+}
+impl launchpad_crowdsales::Config for Runtime {
+	type Event = Event;
+	type MultiCurrency = Currencies;
+	type GetNativeCurrencyId = GetNativeCurrencyId;
+	type GetCommission = GetCommission;
+	type SubmissionDeposit = SubmissionDeposit;
+	type MinRaise = MinRaise;
+	type MinContribution = MinContribution;
+	type MaxProposalsCount = MaxProposalsCount;
+	type MaxCampaignsCount = MaxCampaignsCount;
+	type MaxActivePeriod = MaxActivePeriod;
+	type CampaignStartDelay = CampaignStartDelay;
+	type CampaignRetirementPeriod = CampaignRetirementPeriod;
+	type ProposalRetirementPeriod = ProposalRetirementPeriod;
+	type UpdateOrigin = EnsureRootOrHalfShuraCouncil;
+	type PalletId = CrowdsalesPalletId;
+}
+
+
 parameter_types! {
 	pub ConfigDepositBase: Balance = 100_000_000_000_000; // 10 millicents
 	pub FriendDepositFactor: Balance = 10_000_000_000_000_000; // 1 cent
@@ -1603,6 +1661,9 @@ construct_runtime!(
 		Offences: pallet_offences::{Pallet, Storage, Event} = 53,
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 54,
 		AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 55,
+
+		// Launchpad Crowdsales Pallet
+		Launchpad: launchpad_crowdsales::{Pallet, Storage, Call, Event<T>} = 56,
 	}
 );
 

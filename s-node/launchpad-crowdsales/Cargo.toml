@@ -8,27 +8,24 @@ homepage = 'https://setheum.xyz'
 license = 'Apache-2.0'
 repository = 'https://github.com/Setheum-Labs/launchpad-crowdsales/'
 
-[package.metadata.docs.rs]
-targets = ["x86_64-unknown-linux-gnu"]
-
 [dependencies]
-codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ['derive'] }
+codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["max-encoded-len"] }
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 sp-std = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
-sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 
 orml-traits = { package = "orml-traits", path = "../lib-orml/traits", default-features = false }
+orml-tokens = { path = "../lib-orml/tokens", default-features = false }
+
 support = { package = "module-support", path = "../lib-serml/support", default-features = false }
 primitives = { package = "setheum-primitives", path = "../primitives", default-features = false }
 
 [dev-dependencies]
-serde = { version = "1.0.124" }
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
+sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
+sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
 orml-tokens = { path = "../lib-orml/tokens" }
-sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 
 [features]
 default = ["std"]
@@ -39,8 +36,8 @@ std = [
 	"frame-system/std",
 	"sp-core/std",
 	"sp-std/std",
-	"sp-io/std",
 	"orml-traits/std",
+	
 	"support/std",
 	"primitives/std",
 ]
