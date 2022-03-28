@@ -1,0 +1,3 @@
+[submodule "lib-orml"]
+	path = lib-orml
+	url = https://github.com/Slixon-Technologies/open-runtime-module-library
