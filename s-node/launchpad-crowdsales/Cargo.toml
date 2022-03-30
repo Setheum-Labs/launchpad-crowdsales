@@ -10,6 +10,7 @@ repository = 'https://github.com/Setheum-Labs/launchpad-crowdsales/'
 
 [dependencies]
 codec = { package = "parity-scale-codec", version = "2.2.0", default-features = false, features = ["max-encoded-len"] }
+
 sp-runtime = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 frame-support = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
 frame-system = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10", default-features = false }
@@ -23,8 +24,8 @@ support = { package = "module-support", path = "../lib-serml/support", default-f
 primitives = { package = "setheum-primitives", path = "../primitives", default-features = false }
 
 [dev-dependencies]
-sp-core = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
 sp-io = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
+pallet-balances = { git = "https://github.com/paritytech/substrate", branch = "polkadot-v0.9.10" }
 orml-tokens = { path = "../lib-orml/tokens" }
 
 [features]
