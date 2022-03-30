@@ -104,7 +104,7 @@ pub mod module {
 
 		#[pallet::constant]
 		/// The Airdrop module pallet id, keeps airdrop funds.
-		type PalletId: Get<PalletId>;                                                                                                                            
+		type PalletId: Get<PalletId>;                                                                                                                              
 	}
 
 	#[pallet::error]

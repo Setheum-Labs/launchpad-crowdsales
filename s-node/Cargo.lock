@@ -3148,7 +3148,6 @@ dependencies = [
  "module-support",
  "orml-tokens",
  "orml-traits",
- "pallet-balances",
  "parity-scale-codec",
  "setheum-primitives",
  "sp-core",

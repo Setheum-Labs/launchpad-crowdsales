@@ -1478,7 +1478,7 @@ impl pallet_tips::Config for Runtime {
 }
 
 
-// LaunchPad Crowdsales Pallet
+// Launchpad Crowdsales Pallet
 parameter_type_with_key! {
 	pub MinRaise: |currency_id: CurrencyId| -> Balance {
 		match currency_id {
@@ -1662,8 +1662,8 @@ construct_runtime!(
 		ImOnline: pallet_im_online::{Pallet, Call, Storage, Event<T>, ValidateUnsigned, Config<T>} = 54,
 		AuthorityDiscovery: pallet_authority_discovery::{Pallet, Config} = 55,
 
-		// LaunchPad Crowdsales Pallet
-		LaunchPad: launchpad_crowdsales::{Pallet, Storage, Call, Event<T>} = 56,
+		// Launchpad Crowdsales Pallet
+		Launchpad: launchpad_crowdsales::{Pallet, Storage, Call, Event<T>} = 56,
 	}
 );
 
@@ -2056,34 +2056,34 @@ impl_runtime_apis! {
 			use frame_support::traits::StorageInfoTrait;
 			use orml_benchmarking::{list_benchmark as orml_list_benchmark};
 
-			// use module_nft::benchmarking::Pallet as NftBench;
+			use module_nft::benchmarking::Pallet as NftBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 
-			// list_benchmark!(list, extra, module_nft, NftBench::<Runtime>);
 
-			orml_list_benchmark!(list, extra, launchpad_crowdsales, benchmarking::launchpad_crowdsales);
-			// orml_list_benchmark!(list, extra, module_dex, benchmarking::dex);
-			// orml_list_benchmark!(list, extra, auction_manager, benchmarking::auction_manager);
-			// orml_list_benchmark!(list, extra, cdp_engine, benchmarking::cdp_engine);
+			list_benchmark!(list, extra, module_nft, NftBench::<Runtime>);
+
+			orml_list_benchmark!(list, extra, module_dex, benchmarking::dex);
+			orml_list_benchmark!(list, extra, auction_manager, benchmarking::auction_manager);
+			orml_list_benchmark!(list, extra, cdp_engine, benchmarking::cdp_engine);
 			// orml_list_benchmark!(list, extra, emergency_shutdown, benchmarking::emergency_shutdown);
 			// orml_list_benchmark!(list, extra, module_evm, benchmarking::evm);
-			// orml_list_benchmark!(list, extra, serp_setmint, benchmarking::serp_setmint);
-			// orml_list_benchmark!(list, extra, serp_treasury, benchmarking::serp_treasury);
-			// orml_list_benchmark!(list, extra, cdp_treasury, benchmarking::cdp_treasury);
-			// orml_list_benchmark!(list, extra, module_transaction_pause, benchmarking::transaction_pause);
-			// orml_list_benchmark!(list, extra, module_transaction_payment, benchmarking::transaction_payment);
-			// orml_list_benchmark!(list, extra, module_prices, benchmarking::prices);
+			orml_list_benchmark!(list, extra, serp_setmint, benchmarking::serp_setmint);
+			orml_list_benchmark!(list, extra, serp_treasury, benchmarking::serp_treasury);
+			orml_list_benchmark!(list, extra, cdp_treasury, benchmarking::cdp_treasury);
+			orml_list_benchmark!(list, extra, module_transaction_pause, benchmarking::transaction_pause);
+			orml_list_benchmark!(list, extra, module_transaction_payment, benchmarking::transaction_payment);
+			orml_list_benchmark!(list, extra, module_prices, benchmarking::prices);
 			// orml_list_benchmark!(list, extra, dex_oracle, benchmarking::dex_oracle);
-			// orml_list_benchmark!(list, extra, module_evm_accounts, benchmarking::evm_accounts);
-			// orml_list_benchmark!(list, extra, module_currencies, benchmarking::currencies);
-			// orml_list_benchmark!(list, extra, module_vesting, benchmarking::vesting);
+			orml_list_benchmark!(list, extra, module_evm_accounts, benchmarking::evm_accounts);
+			orml_list_benchmark!(list, extra, module_currencies, benchmarking::currencies);
+			orml_list_benchmark!(list, extra, module_vesting, benchmarking::vesting);
 
-			// orml_list_benchmark!(list, extra, orml_tokens, benchmarking::tokens);
-			// orml_list_benchmark!(list, extra, orml_auction, benchmarking::auction);
+			orml_list_benchmark!(list, extra, orml_tokens, benchmarking::tokens);
+			orml_list_benchmark!(list, extra, orml_auction, benchmarking::auction);
 
-			// orml_list_benchmark!(list, extra, orml_authority, benchmarking::authority);
-			// orml_list_benchmark!(list, extra, orml_oracle, benchmarking::oracle);
+			orml_list_benchmark!(list, extra, orml_authority, benchmarking::authority);
+			orml_list_benchmark!(list, extra, orml_oracle, benchmarking::oracle);
 
 			let storage_info = AllPalletsWithSystem::storage_info();
 
@@ -2098,7 +2098,7 @@ impl_runtime_apis! {
 
 			impl frame_system_benchmarking::Config for Runtime {}
 
-			// use module_nft::benchmarking::Pallet as NftBench;
+			use module_nft::benchmarking::Pallet as NftBench;
 
 
 			let whitelist: Vec<TrackedStorageKey> = vec![
@@ -2120,29 +2120,27 @@ impl_runtime_apis! {
 			let mut batches = Vec::<BenchmarkBatch>::new();
 			let params = (&config, &whitelist);
 
-			// add_benchmark!(params, batches, module_nft, NftBench::<Runtime>);
-
-			orml_add_benchmark!(params, batches, launchpad_crowdsales, benchmarking::launchpad_crowdsales);
-			// orml_add_benchmark!(params, batches, module_dex, benchmarking::dex);
-			// orml_add_benchmark!(params, batches, auction_manager, benchmarking::auction_manager);
-			// orml_add_benchmark!(params, batches, cdp_engine, benchmarking::cdp_engine);
+			add_benchmark!(params, batches, module_nft, NftBench::<Runtime>);
+			orml_add_benchmark!(params, batches, module_dex, benchmarking::dex);
+			orml_add_benchmark!(params, batches, auction_manager, benchmarking::auction_manager);
+			orml_add_benchmark!(params, batches, cdp_engine, benchmarking::cdp_engine);
 			// orml_add_benchmark!(params, batches, emergency_shutdown, benchmarking::emergency_shutdown);
 			// orml_add_benchmark!(params, batches, module_evm, benchmarking::evm);
-			// orml_add_benchmark!(params, batches, serp_setmint, benchmarking::serp_setmint);
-			// orml_add_benchmark!(params, batches, serp_treasury, benchmarking::serp_treasury);
-			// orml_add_benchmark!(params, batches, cdp_treasury, benchmarking::cdp_treasury);
-			// orml_add_benchmark!(params, batches, module_transaction_pause, benchmarking::transaction_pause);
-			// orml_add_benchmark!(params, batches, module_transaction_payment, benchmarking::transaction_payment);
+			orml_add_benchmark!(params, batches, serp_setmint, benchmarking::serp_setmint);
+			orml_add_benchmark!(params, batches, serp_treasury, benchmarking::serp_treasury);
+			orml_add_benchmark!(params, batches, cdp_treasury, benchmarking::cdp_treasury);
+			orml_add_benchmark!(params, batches, module_transaction_pause, benchmarking::transaction_pause);
+			orml_add_benchmark!(params, batches, module_transaction_payment, benchmarking::transaction_payment);
 			// orml_add_benchmark!(params, batches, dex_oracle, benchmarking::dex_oracle);
-			// orml_add_benchmark!(params, batches, module_evm_accounts, benchmarking::evm_accounts);
-			// orml_add_benchmark!(params, batches, module_currencies, benchmarking::currencies);
+			orml_add_benchmark!(params, batches, module_evm_accounts, benchmarking::evm_accounts);
+			orml_add_benchmark!(params, batches, module_currencies, benchmarking::currencies);
 
-			// orml_add_benchmark!(params, batches, orml_tokens, benchmarking::tokens);
-			// orml_add_benchmark!(params, batches, orml_auction, benchmarking::auction);
-			// orml_add_benchmark!(params, batches, module_vesting, benchmarking::vesting);
+			orml_add_benchmark!(params, batches, orml_tokens, benchmarking::tokens);
+			orml_add_benchmark!(params, batches, orml_auction, benchmarking::auction);
+			orml_add_benchmark!(params, batches, module_vesting, benchmarking::vesting);
 
-			// orml_add_benchmark!(params, batches, orml_authority, benchmarking::authority);
-			// orml_add_benchmark!(params, batches, orml_oracle, benchmarking::oracle);
+			orml_add_benchmark!(params, batches, orml_authority, benchmarking::authority);
+			orml_add_benchmark!(params, batches, orml_oracle, benchmarking::oracle);
 
 			if batches.is_empty() { return Err("Benchmark not found for this pallet.".into()) }
 			Ok(batches)
