@@ -138,8 +138,6 @@ pub mod module {
 		DuplicateContribution,
 		/// Must contribute at least the minimum amount of funds.
 		GoalBelowMinimumRaise,
-		/// The goal is not equal to allocation
-		GoalNotAllignedWithAllocation,
 		/// The Submission Deposit Funds are insufficient
 		InsufficientBalance,
 		/// Wrong Currency Type in use.
@@ -481,9 +479,6 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		goal: BalanceOf<T>,
 		period: T::BlockNumber,
 	) -> DispatchResult {
-
-		ensure!(token_price * crowd_allocation == goal, Error::<T>::GoalNotAllignedWithAllocation);
-
 		// Generate campaign_id - overflow not managed
 		let campaign_id = <CampaignsIndex<T>>::get() + 1;
 		<CampaignsIndex<T>>::put(campaign_id);
