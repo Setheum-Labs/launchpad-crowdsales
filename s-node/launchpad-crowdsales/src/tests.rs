@@ -256,23 +256,6 @@ fn make_proposal_does_not_work() {
                 ),
                 Error::<Runtime>::GoalBelowMinimumRaise
             );
-            assert_noop!(
-                LaunchPad::make_proposal(
-                    Origin::signed(ALICE),
-                    "Project Name".as_bytes().to_vec(),
-                    "Project Logo".as_bytes().to_vec(),
-                    "Project Description".as_bytes().to_vec(),
-                    "Project Website".as_bytes().to_vec(),
-                    BOB,
-                    SETUSD,
-                    TEST,
-                    10,
-                    10_001,
-                    100_000,
-                    20
-                ),
-                Error::<Runtime>::GoalNotAllignedWithAllocation
-            );
         });
 }
 
