@@ -181,6 +181,8 @@ pub mod module {
 		RejectedProposal(CurrencyIdOf<T>),
 		/// Approved Proposal \[currency_id\]
 		ApprovedProposal(CurrencyIdOf<T>),
+		/// Activated Campaign \[currency_id\]
+		ActivatedCampaign(CurrencyIdOf<T>),
 		/// Campaign Started \[currency_id\]
 		StartedCampaign(CurrencyIdOf<T>),
 		/// Ended Campaign Successfully \[currency_id, campaign_info\]
@@ -426,6 +428,23 @@ pub mod module {
 			)?;
 
 			Self::deposit_event(Event::RejectedProposal(id));
+			Ok(())
+		}
+
+		// Activate a Waiting Campaign - origin must be `UpdateOrigin`
+		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[transactional]
+		pub fn activate_waiting_campaign(
+			origin: OriginFor<T>,
+			id: CurrencyIdOf<T>,
+		) -> DispatchResult {
+			T::UpdateOrigin::ensure_origin(origin)?;
+
+			Self::activate_campaign(
+				id,
+			)?;
+
+			Self::deposit_event(Event::ActivatedCampaign(id));
 			Ok(())
 		}
 	}
