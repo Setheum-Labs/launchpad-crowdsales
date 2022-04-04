@@ -1,6 +1,6 @@
 .PHONY: toolchain
 toolchain:
-	./scripts/init.sh
+	./s-node/scripts/init.sh
 
 .PHONY: init
 init:
