@@ -26,7 +26,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run tests
-      run: cd pallet && cargo test --verbose
+      run: make tests
 
   benchmark:
 
@@ -35,7 +35,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Run tests
-      run: cd s-node && make benchmark
+      run: make benchmark
 
   node:
 
@@ -53,4 +53,4 @@ jobs:
           target/
         key: build-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
     - name: Init and Build
-      run: cd s-node && make init && make build
+      run: make init && make build

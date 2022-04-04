@@ -24,7 +24,7 @@ watch:
 
 .PHONY: tests
 tests:
-	cd ./s-node/launchpad-crowdsales && cargo test
+	cd ./s-node/launchpad-crowdsales && cargo test --verbose
 
 .PHONY: run
 run:
