@@ -739,28 +739,28 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.origin == who || campaign.beneficiary == who, Error::<T>::WrongOrigin);
 		ensure!(!campaign.is_claimed, Error::<T>::CampaignAlreadyClaimed);
 
-		// Ensure campaign is valid
-		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 
-		// Claim the campaign raised funds and transfer to the beneficiary
-		let transfer_claim = T::MultiCurrency::transfer(
-			campaign.raise_currency,
-			&campaign.pool,
-			&campaign.beneficiary,
-			campaign.raised
-		)
-		.is_ok();
-
-		if campaign.is_successful && transfer_claim {
-			T::MultiCurrency::transfer(
+		if campaign.is_ended {
+			// Claim the campaign raised funds and transfer to the beneficiary
+			let transfer_claim = T::MultiCurrency::transfer(
 				campaign.raise_currency,
 				&campaign.pool,
 				&campaign.beneficiary,
 				campaign.raised
-			).unwrap();
-			// Campaign is claimed, update storage
-			campaign.is_claimed = true;
-			<Campaigns<T>>::insert(id, campaign);
+			)
+			.is_ok();
+	
+			if campaign.is_successful && transfer_claim {
+				T::MultiCurrency::transfer(
+					campaign.raise_currency,
+					&campaign.pool,
+					&campaign.beneficiary,
+					campaign.raised
+				).unwrap();
+				// Campaign is claimed, update storage
+				campaign.is_claimed = true;
+				<Campaigns<T>>::insert(id, campaign);
+			}
 		}
 		Ok(())
 	}
@@ -815,7 +815,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
 
-		ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
+		// ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
 		Ok(())
 	}
 

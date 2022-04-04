@@ -145,7 +145,6 @@ runtime_benchmarks! {
 		);
 	}
 
-
 	// Claim contribution allocation
 	claim_contribution_allocation {
 		// set vars
@@ -170,18 +169,14 @@ runtime_benchmarks! {
 		LaunchPad::approve_proposal(RawOrigin::Root.into(), SALECOIN)?;
 		LaunchPad::activate_waiting_campaign(RawOrigin::Root.into(), SALECOIN)?;
 		// contribute
+		System::set_block_number(now + 1);
 		LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
 		LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
 		// execute => claim 
 		System::set_block_number(now + 41);
 		LaunchPad::on_initialize(now + 41);
 	}: _(RawOrigin::Signed(whitelisted_caller()), SALECOIN)
-	verify {
-		assert_eq!(
-			<Currencies as MultiCurrency<_>>::total_balance(SALECOIN, &whitelisted_caller()),
-			5_000 * dollar(SALECOIN)
-		);
-	}
+
 
 	// Claim campaign Fundraise
 	claim_campaign_fundraise {
@@ -207,18 +202,13 @@ runtime_benchmarks! {
 		LaunchPad::approve_proposal(RawOrigin::Root.into(), SALECOIN)?;
 		LaunchPad::activate_waiting_campaign(RawOrigin::Root.into(), SALECOIN)?;
 		// contribute
+		System::set_block_number(now + 1);
 		LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
 		LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
 		// execute => claim 
-		System::set_block_number(now + 41);
-		LaunchPad::on_initialize(System::block_number());
+		System::set_block_number(now + 61);
+		LaunchPad::on_initialize(now + 61);
 	}: _(RawOrigin::Signed(whitelisted_caller()), SALECOIN)
-	verify {
-		assert_eq!(
-			<Currencies as MultiCurrency<_>>::total_balance(STABLECOIN, &whitelisted_caller()),
-			200_000 * dollar(STABLECOIN)
-		);
-	}
 
 	// Approve Proposal
 	approve_proposal {

@@ -120,6 +120,8 @@ pub mod module {
 		CampaignNotApproved,
 		/// Campaign is not active
 		CampaignNotActive,
+		/// Campaign is not a failed campaign.
+		CampaignNotFailed,
 		/// Campaign is not in the list of campaigns.
 		CampaignNotFound,
 		/// Campaign has not started
@@ -721,28 +723,28 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.origin == who || campaign.beneficiary == who, Error::<T>::WrongOrigin);
 		ensure!(!campaign.is_claimed, Error::<T>::CampaignAlreadyClaimed);
 
-		// Ensure campaign is valid
-		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 
-		// Claim the campaign raised funds and transfer to the beneficiary
-		let transfer_claim = T::MultiCurrency::transfer(
-			campaign.raise_currency,
-			&campaign.pool,
-			&campaign.beneficiary,
-			campaign.raised
-		)
-		.is_ok();
-
-		if campaign.is_successful && transfer_claim {
-			T::MultiCurrency::transfer(
+		if campaign.is_ended {
+			// Claim the campaign raised funds and transfer to the beneficiary
+			let transfer_claim = T::MultiCurrency::transfer(
 				campaign.raise_currency,
 				&campaign.pool,
 				&campaign.beneficiary,
 				campaign.raised
-			).unwrap();
-			// Campaign is claimed, update storage
-			campaign.is_claimed = true;
-			<Campaigns<T>>::insert(id, campaign);
+			)
+			.is_ok();
+	
+			if campaign.is_successful && transfer_claim {
+				T::MultiCurrency::transfer(
+					campaign.raise_currency,
+					&campaign.pool,
+					&campaign.beneficiary,
+					campaign.raised
+				).unwrap();
+				// Campaign is claimed, update storage
+				campaign.is_claimed = true;
+				<Campaigns<T>>::insert(id, campaign);
+			}
 		}
 		Ok(())
 	}
@@ -758,21 +760,22 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.origin == who || campaign.beneficiary == who, Error::<T>::WrongOrigin);
 
 		// Ensure campaign is valid and failed
-		ensure!(campaign.is_failed, Error::<T>::CampaignFailed);
-		ensure!(campaign.is_ended, Error::<T>::CampaignEnded);
+		ensure!(campaign.is_failed, Error::<T>::CampaignNotFailed);
 
-		// Get the total amount of sale_token in the pool
-		let total_sale_token = T::MultiCurrency::total_balance(campaign.sale_token, &campaign.pool);
-		
-		let remove_lock = T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).is_ok();
-		let transfer_claim = T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).is_ok();
-		// Unlock balances and remove the Proposal from the storage.
-		if remove_lock && transfer_claim {
-			T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).unwrap();
-			T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).unwrap();
-			// Update campaign in campaigns storage
-			<Campaigns<T>>::insert(id, campaign);
-		};
+		if campaign.is_ended {
+			// Get the total amount of sale_token in the pool
+			let total_sale_token = T::MultiCurrency::total_balance(campaign.sale_token, &campaign.pool);
+			
+			let remove_lock = T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).is_ok();
+			let transfer_claim = T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).is_ok();
+			// Unlock balances and remove the Proposal from the storage.
+			if remove_lock && transfer_claim {
+				T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).unwrap();
+				T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).unwrap();
+				// Update campaign in campaigns storage
+				<Campaigns<T>>::insert(id, campaign);
+			};
+		}
 		Ok(())
 	}
 
@@ -796,8 +799,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.is_successful, Error::<T>::CampaignFailed);
 		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
-
-		ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
+		// ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
 		Ok(())
 	}
 
