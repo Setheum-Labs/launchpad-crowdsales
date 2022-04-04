@@ -49,7 +49,7 @@ use sp_std::marker::PhantomData;
 
 /// Weight functions needed for launchpad_crowdsales.
 pub trait WeightInfo {
-	fn on_initialize(n: u32) -> Weight;
+	fn on_initialize(n: u32, ) -> Weight;
 	fn make_proposal() -> Weight;
 	fn contribute() -> Weight;
 	fn claim_contribution_allocation() -> Weight;
@@ -61,43 +61,43 @@ pub trait WeightInfo {
 
 /// Default weights.
 impl WeightInfo for () {
-	fn on_initialize(n: u32) -> Weight {
-		(15_679_000 as Weight)
+	fn on_initialize(n: u32, ) -> Weight {
+		(16_137_000 as Weight)
 			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add((3_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 	}
 	fn make_proposal() -> Weight {
-		(184_470_000 as Weight)
+		(189_367_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
 	}
 	fn contribute() -> Weight {
-		(129_958_000 as Weight)
+		(131_125_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	fn claim_contribution_allocation() -> Weight {
-		(130_237_000 as Weight)
+		(130_129_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
 	fn claim_campaign_fundraise() -> Weight {
-		(44_818_000 as Weight)
+		(44_688_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 	}
 	fn approve_proposal() -> Weight {
-		(52_072_000 as Weight)
+		(52_500_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
 	fn reject_proposal() -> Weight {
-		(42_782_000 as Weight)
+		(43_933_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn activate_waiting_campaign() -> Weight {
-		(41_701_000 as Weight)
+		(41_674_000 as Weight)
 			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}

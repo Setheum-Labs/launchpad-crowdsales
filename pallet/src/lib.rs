@@ -25,11 +25,13 @@ use sp_runtime::{traits::{AccountIdConversion, Zero}, DispatchResult};
 mod mock;
 mod tests;
 pub mod traits;
+pub mod weights;
 
 pub use traits::{
 	Balance, CampaignId, CampaignInfo, CampaignManager, CurrencyId, Proposal,
 };
 pub use module::*;
+pub use weights::WeightInfo;
 
 pub(crate) type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 pub(crate) type CurrencyIdOf<T> =
@@ -105,7 +107,10 @@ pub mod module {
 
 		#[pallet::constant]
 		/// The Airdrop module pallet id, keeps airdrop funds.
-		type PalletId: Get<PalletId>;                                                                                                                            
+		type PalletId: Get<PalletId>;
+		
+		/// Weight information for the extrinsics in this module.
+		type WeightInfo: WeightInfo;                                                                                                                    
 	}
 
 	#[pallet::error]
@@ -120,8 +125,6 @@ pub mod module {
 		CampaignNotApproved,
 		/// Campaign is not active
 		CampaignNotActive,
-		/// Campaign is not a failed campaign.
-		CampaignNotFailed,
 		/// Campaign is not in the list of campaigns.
 		CampaignNotFound,
 		/// Campaign has not started
@@ -184,6 +187,8 @@ pub mod module {
 		RejectedProposal(CurrencyIdOf<T>),
 		/// Approved Proposal \[currency_id\]
 		ApprovedProposal(CurrencyIdOf<T>),
+		/// Activated Campaign \[currency_id\]
+		ActivatedCampaign(CurrencyIdOf<T>),
 		/// Campaign Started \[currency_id\]
 		StartedCampaign(CurrencyIdOf<T>),
 		/// Ended Campaign Successfully \[currency_id, campaign_info\]
@@ -294,14 +299,14 @@ pub mod module {
 				}
 				break;
 			}
-			count
+			T::WeightInfo::on_initialize(count as u32)
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Make a new proposal
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::make_proposal(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn make_proposal(
 			origin: OriginFor<T>,
@@ -345,7 +350,7 @@ pub mod module {
 		}
 
 		// Make a contribution to an active campaign
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::contribute(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn contribute(
 			origin: OriginFor<T>,
@@ -364,7 +369,7 @@ pub mod module {
 		}
 
 		// Claim a contribution allocation
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::claim_contribution_allocation(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn claim_contribution_allocation(
 			origin: OriginFor<T>,
@@ -380,7 +385,7 @@ pub mod module {
 		}
 		
 		// Claim a campaign's raised funds
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::claim_campaign_fundraise(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn claim_campaign_fundraise(
 			origin: OriginFor<T>,
@@ -399,7 +404,7 @@ pub mod module {
 		}
 		
 		// Approve a proposal - origin must be `UpdateOrigin`
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::approve_proposal(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn approve_proposal(
 			origin: OriginFor<T>,
@@ -416,7 +421,7 @@ pub mod module {
 		}
 		
 		// Reject a proposal - origin must be `UpdateOrigin`
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::reject_proposal(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn reject_proposal(
 			origin: OriginFor<T>,
@@ -429,6 +434,23 @@ pub mod module {
 			)?;
 
 			Self::deposit_event(Event::RejectedProposal(id));
+			Ok(())
+		}
+
+		// Activate a Waiting Campaign - origin must be `UpdateOrigin`
+		#[pallet::weight((T::WeightInfo::activate_waiting_campaign(), DispatchClass::Operational))]
+		#[transactional]
+		pub fn activate_waiting_campaign(
+			origin: OriginFor<T>,
+			id: CurrencyIdOf<T>,
+		) -> DispatchResult {
+			T::UpdateOrigin::ensure_origin(origin)?;
+
+			Self::activate_campaign(
+				id,
+			)?;
+
+			Self::deposit_event(Event::ActivatedCampaign(id));
 			Ok(())
 		}
 	}
@@ -760,22 +782,21 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.origin == who || campaign.beneficiary == who, Error::<T>::WrongOrigin);
 
 		// Ensure campaign is valid and failed
-		ensure!(campaign.is_failed, Error::<T>::CampaignNotFailed);
+		ensure!(campaign.is_failed, Error::<T>::CampaignFailed);
+		ensure!(campaign.is_ended, Error::<T>::CampaignEnded);
 
-		if campaign.is_ended {
-			// Get the total amount of sale_token in the pool
-			let total_sale_token = T::MultiCurrency::total_balance(campaign.sale_token, &campaign.pool);
-			
-			let remove_lock = T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).is_ok();
-			let transfer_claim = T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).is_ok();
-			// Unlock balances and remove the Proposal from the storage.
-			if remove_lock && transfer_claim {
-				T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).unwrap();
-				T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).unwrap();
-				// Update campaign in campaigns storage
-				<Campaigns<T>>::insert(id, campaign);
-			};
-		}
+		// Get the total amount of sale_token in the pool
+		let total_sale_token = T::MultiCurrency::total_balance(campaign.sale_token, &campaign.pool);
+		
+		let remove_lock = T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).is_ok();
+		let transfer_claim = T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).is_ok();
+		// Unlock balances and remove the Proposal from the storage.
+		if remove_lock && transfer_claim {
+			T::MultiCurrency::remove_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &campaign.origin).unwrap();
+			T::MultiCurrency::transfer( campaign.sale_token, &campaign.pool, &who, total_sale_token).unwrap();
+			// Update campaign in campaigns storage
+			<Campaigns<T>>::insert(id, campaign);
+		};
 		Ok(())
 	}
 
@@ -799,6 +820,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		ensure!(campaign.is_successful, Error::<T>::CampaignFailed);
 		ensure!(campaign.is_ended, Error::<T>::CampaignStillActive);
 		ensure!(campaign.is_approved, Error::<T>::CampaignNotApproved);
+
 		// ensure!(campaign.campaign_start <= <frame_system::Pallet<T>>::block_number(), Error::<T>::CampaignNotStarted);
 		Ok(())
 	}

@@ -38,3 +38,4 @@ benchmark:
 .PHONY: benchmark-pallet
 benchmark-pallet:
 	cd s-node && cargo run --release --features=runtime-benchmarks --features=with-ethereum-compatibility -- benchmark --chain=dev --steps=50 --repeat=20 '--pallet=launchpad_crowdsales' '--extrinsic=*' --execution=wasm --wasm-execution=compiled --heap-pages=4096 --template=./templates/orml-weight-template.hbs --output=./launchpad-crowdsales/src/weights.rs
+	cd s-node && cargo run --release --features=runtime-benchmarks --features=with-ethereum-compatibility -- benchmark --chain=dev --steps=50 --repeat=20 '--pallet=launchpad_crowdsales' '--extrinsic=*' --execution=wasm --wasm-execution=compiled --heap-pages=4096 --template=./templates/orml-weight-template.hbs --output=../pallet/src/weights.rs
