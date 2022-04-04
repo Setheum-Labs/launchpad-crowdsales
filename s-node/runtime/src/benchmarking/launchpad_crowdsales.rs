@@ -170,8 +170,8 @@ runtime_benchmarks! {
 		LaunchPad::activate_waiting_campaign(RawOrigin::Root.into(), SALECOIN)?;
 		// contribute
 		System::set_block_number(now + 1);
-		LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
-		LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		let _ = LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		let __ = LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
 		// execute => claim 
 		System::set_block_number(now + 41);
 		LaunchPad::on_initialize(now + 41);
@@ -203,8 +203,8 @@ runtime_benchmarks! {
 		LaunchPad::activate_waiting_campaign(RawOrigin::Root.into(), SALECOIN)?;
 		// contribute
 		System::set_block_number(now + 1);
-		LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
-		LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		let _ = LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		let __ = LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
 		// execute => claim 
 		System::set_block_number(now + 61);
 		LaunchPad::on_initialize(now + 61);
