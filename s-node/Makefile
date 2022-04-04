@@ -87,7 +87,16 @@ bench:
 
 .PHONY: benchmark
 benchmark:
-	 cargo run --release --features=runtime-benchmarks --features=with-ethereum-compatibility -- benchmark --chain=dev --steps=50 --repeat=20 '--pallet=*' '--extrinsic=*' --execution=wasm --wasm-execution=compiled --heap-pages=4096 --template=./templates/runtime-weight-template.hbs --output=./runtime/src/weights/
+	make benchmark-pallet
+	cargo run --release --features=runtime-benchmarks --features=with-ethereum-compatibility -- benchmark --chain=dev --steps=50 --repeat=20 '--pallet=*' '--extrinsic=*' --execution=wasm --wasm-execution=compiled --heap-pages=4096 --template=./templates/runtime-weight-template.hbs --output=./runtime/src/weights/
+	
+.PHONY: benchmark-pallet
+benchmark-pallet:
+	 cargo run --release --features=with-ethereum-compatibility -- benchmark --chain=dev --steps=50 --repeat=20 '--pallet=launchpad_crowdsales' '--extrinsic=*' --execution=wasm --wasm-execution=compiled --heap-pages=4096 --template=./templates/weight-module-template.hbs --output=./launchpad-crowdsales/src/weights.rs
+
+.PHONY: test-pallet
+test-pallet:
+	 cd ./launchpad-crowdsales && cargo test
 
 .PHONY: doc
 doc:

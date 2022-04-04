@@ -30,13 +30,13 @@
 // --chain=dev
 // --steps=50
 // --repeat=20
-// --pallet=*
+// --pallet=launchpad_crowdsales
 // --extrinsic=*
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
 // --template=./templates/runtime-weight-template.hbs
-// --output=./runtime/src/weights/
+// --output=./launchpad-crowdsales/src/weights.rs
 
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
@@ -49,43 +49,41 @@ use sp_std::marker::PhantomData;
 /// Weight functions for launchpad_crowdsales.
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> launchpad_crowdsales::WeightInfo for WeightInfo<T> {
-	fn on_initialize(n: u32, ) -> Weight {
-		(16_344_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+	fn on_initialize(_n: u32, ) -> Weight {
+		(19_658_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 	}
 	fn make_proposal() -> Weight {
-		(193_434_000 as Weight)
+		(187_711_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().writes(7 as Weight))
 	}
 	fn contribute() -> Weight {
-		(137_001_000 as Weight)
+		(129_717_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	fn claim_contribution_allocation() -> Weight {
-		(135_162_000 as Weight)
+		(129_774_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	fn claim_campaign_fundraise() -> Weight {
-		(46_009_000 as Weight)
+		(45_112_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 	}
 	fn approve_proposal() -> Weight {
-		(54_444_000 as Weight)
+		(52_286_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	fn reject_proposal() -> Weight {
-		(44_520_000 as Weight)
+		(42_861_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn activate_waiting_campaign() -> Weight {
-		(42_935_000 as Weight)
+		(41_513_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}

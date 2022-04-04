@@ -48,6 +48,22 @@ A successful Launchpad Campaign is one that has raised the `goal` and has sold t
 
 A failed Launchpad Campaign is one that has not raised the `goal` and has not sold their tokens to the public. Once the `goal` is not reached and the `period` to end the campaign has ended, the Campaign is considered failed and the campaign allocation of tokens is available for the Campaign Creator to claim refund and the raised funds are also available for the Crowd/Contributors/buyers to claim refunds all only before the `RetirementPeriod` of the campaign.
 
+## Tests
+
+To run the tests, run the following command:
+
+```bash
+make tests
+```
+
+## Benchmarking
+
+To run the benchmark, run the following commands:
+
+```bash
+make benchmark
+```
+
 ## License
 
 Apache License Version 2.0

@@ -681,14 +681,6 @@ fn claim_campaign_fundraise_does_not_work() {
                 10_000
             ));
 
-            assert_noop!(
-                LaunchPad::claim_campaign_fundraise(
-                    Origin::signed(ALICE),
-                    TEST,
-                ),
-                Error::<Runtime>::CampaignStillActive
-            );
-
             LaunchPad::on_initialize(41);
             System::set_block_number(41);
 
