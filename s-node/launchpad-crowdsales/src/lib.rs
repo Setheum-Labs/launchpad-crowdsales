@@ -27,8 +27,10 @@ use sp_runtime::{traits::{AccountIdConversion, Zero}, DispatchResult};
 
 mod mock;
 mod tests;
+pub mod weights;
 
 pub use module::*;
+pub use weights::WeightInfo;
 
 pub(crate) type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
 pub(crate) type CurrencyIdOf<T> =
@@ -104,7 +106,10 @@ pub mod module {
 
 		#[pallet::constant]
 		/// The Airdrop module pallet id, keeps airdrop funds.
-		type PalletId: Get<PalletId>;                                                                                                                            
+		type PalletId: Get<PalletId>;      
+		
+		/// Weight information for the extrinsics in this module.
+		type WeightInfo: WeightInfo;                                                                                                                      
 	}
 
 	#[pallet::error]
@@ -293,14 +298,14 @@ pub mod module {
 				}
 				break;
 			}
-			count
+			T::WeightInfo::on_initialize(count as u32)
 		}
 	}
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Make a new proposal
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::make_proposal(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn make_proposal(
 			origin: OriginFor<T>,
@@ -344,7 +349,7 @@ pub mod module {
 		}
 
 		// Make a contribution to an active campaign
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::contribute(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn contribute(
 			origin: OriginFor<T>,
@@ -363,7 +368,7 @@ pub mod module {
 		}
 
 		// Claim a contribution allocation
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::claim_contribution_allocation(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn claim_contribution_allocation(
 			origin: OriginFor<T>,
@@ -379,7 +384,7 @@ pub mod module {
 		}
 		
 		// Claim a campaign's raised funds
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::claim_campaign_fundraise(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn claim_campaign_fundraise(
 			origin: OriginFor<T>,
@@ -398,7 +403,7 @@ pub mod module {
 		}
 		
 		// Approve a proposal - origin must be `UpdateOrigin`
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::approve_proposal(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn approve_proposal(
 			origin: OriginFor<T>,
@@ -415,7 +420,7 @@ pub mod module {
 		}
 		
 		// Reject a proposal - origin must be `UpdateOrigin`
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::reject_proposal(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn reject_proposal(
 			origin: OriginFor<T>,
@@ -432,7 +437,7 @@ pub mod module {
 		}
 
 		// Activate a Waiting Campaign - origin must be `UpdateOrigin`
-		#[pallet::weight((100_000_000 as Weight, DispatchClass::Operational))]
+		#[pallet::weight((T::WeightInfo::activate_waiting_campaign(), DispatchClass::Operational))]
 		#[transactional]
 		pub fn activate_waiting_campaign(
 			origin: OriginFor<T>,

@@ -50,42 +50,42 @@ use sp_std::marker::PhantomData;
 pub struct WeightInfo<T>(PhantomData<T>);
 impl<T: frame_system::Config> launchpad_crowdsales::WeightInfo for WeightInfo<T> {
 	fn on_initialize(n: u32, ) -> Weight {
-		(16_344_000 as Weight)
-			// Standard Error: 0
-			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+		(15_748_000 as Weight)
+			// Standard Error: 1_000
+			.saturating_add((6_000 as Weight).saturating_mul(n as Weight))
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 	}
 	fn make_proposal() -> Weight {
-		(193_434_000 as Weight)
+		(183_733_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(6 as Weight))
 			.saturating_add(T::DbWeight::get().writes(7 as Weight))
 	}
 	fn contribute() -> Weight {
-		(137_001_000 as Weight)
+		(129_663_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(4 as Weight))
 	}
 	fn claim_contribution_allocation() -> Weight {
-		(135_162_000 as Weight)
+		(129_087_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(4 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	fn claim_campaign_fundraise() -> Weight {
-		(46_009_000 as Weight)
+		(46_281_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 	}
 	fn approve_proposal() -> Weight {
-		(54_444_000 as Weight)
+		(52_351_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(2 as Weight))
 			.saturating_add(T::DbWeight::get().writes(3 as Weight))
 	}
 	fn reject_proposal() -> Weight {
-		(44_520_000 as Weight)
+		(42_684_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}
 	fn activate_waiting_campaign() -> Weight {
-		(42_935_000 as Weight)
+		(41_566_000 as Weight)
 			.saturating_add(T::DbWeight::get().reads(1 as Weight))
 			.saturating_add(T::DbWeight::get().writes(1 as Weight))
 	}

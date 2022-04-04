@@ -35,56 +35,70 @@
 // --execution=wasm
 // --wasm-execution=compiled
 // --heap-pages=4096
-// --template=./templates/runtime-weight-template.hbs
+// --template=./templates/orml-weight-template.hbs
 // --output=./launchpad-crowdsales/src/weights.rs
 
 
 #![cfg_attr(rustfmt, rustfmt_skip)]
 #![allow(unused_parens)]
 #![allow(unused_imports)]
+#![allow(clippy::unnecessary_cast)]
 
-use frame_support::{traits::Get, weights::Weight};
+use frame_support::{traits::Get, weights::{Weight, constants::RocksDbWeight}};
 use sp_std::marker::PhantomData;
 
-/// Weight functions for launchpad_crowdsales.
-pub struct WeightInfo<T>(PhantomData<T>);
-impl<T: frame_system::Config> launchpad_crowdsales::WeightInfo for WeightInfo<T> {
-	fn on_initialize(_n: u32, ) -> Weight {
-		(19_658_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
+/// Weight functions needed for launchpad_crowdsales.
+pub trait WeightInfo {
+	fn on_initialize(n: u32) -> Weight;
+	fn make_proposal() -> Weight;
+	fn contribute() -> Weight;
+	fn claim_contribution_allocation() -> Weight;
+	fn claim_campaign_fundraise() -> Weight;
+	fn approve_proposal() -> Weight;
+	fn reject_proposal() -> Weight;
+	fn activate_waiting_campaign() -> Weight;
+}
+
+/// Default weights.
+impl WeightInfo for () {
+	fn on_initialize(n: u32) -> Weight {
+		(15_679_000 as Weight)
+			// Standard Error: 0
+			.saturating_add((2_000 as Weight).saturating_mul(n as Weight))
+			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
 	}
 	fn make_proposal() -> Weight {
-		(187_711_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(6 as Weight))
-			.saturating_add(T::DbWeight::get().writes(7 as Weight))
+		(184_470_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(6 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(7 as Weight))
 	}
 	fn contribute() -> Weight {
-		(129_717_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(4 as Weight))
+		(129_958_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(4 as Weight))
 	}
 	fn claim_contribution_allocation() -> Weight {
-		(129_774_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(4 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		(130_237_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(4 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
 	fn claim_campaign_fundraise() -> Weight {
-		(45_112_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
+		(44_818_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
 	}
 	fn approve_proposal() -> Weight {
-		(52_286_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(2 as Weight))
-			.saturating_add(T::DbWeight::get().writes(3 as Weight))
+		(52_072_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(2 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(3 as Weight))
 	}
 	fn reject_proposal() -> Weight {
-		(42_861_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(42_782_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 	fn activate_waiting_campaign() -> Weight {
-		(41_513_000 as Weight)
-			.saturating_add(T::DbWeight::get().reads(1 as Weight))
-			.saturating_add(T::DbWeight::get().writes(1 as Weight))
+		(41_701_000 as Weight)
+			.saturating_add(RocksDbWeight::get().reads(1 as Weight))
+			.saturating_add(RocksDbWeight::get().writes(1 as Weight))
 	}
 }
