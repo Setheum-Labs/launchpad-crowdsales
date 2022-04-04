@@ -4,7 +4,7 @@
 #![allow(unused_parens)]
 #![allow(unused_imports)]
 use crate::{
-	AccountId, Balance, BlockNumber, CurrencyId, Currencies, dollar, Ratio, Runtime,
+	AccountId, Balance, BlockNumber, CurrencyId, Currencies, dollar, Event, Ratio, Runtime,
 	LaunchPad, System, GetSerpCurrencyId, GetNativeCurrencyId, GetHelpCurrencyId, GetSetUSDId, 
 };
 
@@ -34,149 +34,253 @@ const NATIVE: CurrencyId = GetNativeCurrencyId::get();
 
 runtime_benchmarks! {
 	{ Runtime, launchpad_crowdsales }
-	on_initialize {
-		let n in 0 .. 100;
-		let u in 0 .. 100;
 
+
+	on_initialize {
+		let n in 0 .. 200;
 		let caller: AccountId = whitelisted_caller();
 		let beneficiary: AccountId = account("beneficiary", 0, SEED);
-
-		set_balance(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD));
-		set_balance(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN));
-		set_balance(SALECOIN, &caller, 1000000000 * dollar(SALECOIN));
-		set_balance(NATIVE, &caller, 1000000000 * dollar(NATIVE));
-
+		// set balance
+		Currencies::deposit(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD))?;
+		Currencies::deposit(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN))?;
+		Currencies::deposit(SALECOIN, &caller, 1000000000 * dollar(SALECOIN))?;
+		Currencies::deposit(NATIVE, &caller, 1000000000 * dollar(NATIVE))?;
 		let now: BlockNumber = 258000;
-
-		let mut proposals: Vec<u32> = Vec::new();
-		let mut campaigns: Vec<u32> = Vec::new();
+		let proposal = CampaignInfo {
+			id: SALECOIN,
+			origin: caller.clone(),
+			project_name: "Project Name".as_bytes().to_vec(),
+			project_logo: "Project Logo".as_bytes().to_vec(),
+			project_description: "Project Description".as_bytes().to_vec(),
+			project_website: "project.website".as_bytes().to_vec(),
+			beneficiary: beneficiary.clone(),
+			pool: LaunchPad::campaign_pool(0),
+			raise_currency: STABLECOIN,
+			sale_token: SALECOIN,
+			token_price: 10,
+			crowd_allocation: 10_000,
+			goal: 100_000,
+			raised: 0,
+			contributors_count: 0,
+			contributions: Vec::new(),
+			period: 20,
+			campaign_start: 0,
+			campaign_end: 0,
+			campaign_retirement_period: 0,
+			proposal_retirement_period: 0,
+			is_approved: false,
+			is_rejected: false,
+			is_waiting: false,
+			is_active: false,
+			is_successful: false,
+			is_failed: false,
+			is_ended: false,
+			is_claimed: false,
+		};
+		let mut proposals_vec: Vec<(CurrencyId, CampaignInfo<AccountId, Balance, BlockNumber>)> = Vec::new();
+		let mut campaigns_vec: Vec<(CurrencyId, CampaignInfo<AccountId, Balance, BlockNumber>)> = Vec::new();
 		for i in 0 .. n {
-			LaunchPad::make_proposal(
-				RawOrigin::Root.into(),
-				vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
-				whitelisted_caller(), STABLECOIN, SALECOIN, 10, 10_000, 100_000, 20
-			)?;
-			proposals.push(i);
+			for proposal in LaunchPad::proposals(SALECOIN).iter().into_iter() {
+				LaunchPad::make_proposal(
+					RawOrigin::Root.into(),
+					vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
+					whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+					10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
+				)?;
+				proposals_vec.push((SALECOIN, proposal.clone()));
+				LaunchPad::approve_proposal(RawOrigin::Root.into(), SALECOIN)?;
+			}
+			for proposal in LaunchPad::campaigns(SALECOIN).iter().into_iter() {
+				campaigns_vec.push((SALECOIN, proposal.clone()));
+			}
 		}
-		for i in 0 .. u {
-			LaunchPad::approve_proposal(RawOrigin::Root.into(), 1)?;
-			campaigns.push(i);
-		}
-
 		System::set_block_number(now);
 	}: {
 		LaunchPad::on_initialize(System::block_number());
 	}
 
-	// mint NFT token
+	// Make Proposal
 	make_proposal {
 		let caller: AccountId = account("caller", 0, SEED);
 		let beneficiary: AccountId = account("beneficiary", 0, SEED);
-
-		set_balance(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD));
-		set_balance(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN));
-		set_balance(SALECOIN, &caller, 1000000000 * dollar(SALECOIN));
-		set_balance(NATIVE, &caller, 1000000000 * dollar(NATIVE));
+		// set balance
+		Currencies::deposit(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD))?;
+		Currencies::deposit(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN))?;
+		Currencies::deposit(SALECOIN, &caller, 1000000000 * dollar(SALECOIN))?;
+		Currencies::deposit(NATIVE, &caller, 1000000000 * dollar(NATIVE))?;
 	}: _(
 		RawOrigin::Signed(caller),
 		vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
-		beneficiary, STABLECOIN, SALECOIN, 10, 10_000, 100_000, 20
+		beneficiary, STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+		10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 	)
 
-	// transfer NFT token to another account
+	// Contribute to campaign
 	contribute {
-		let caller: AccountId = account("caller", 0, SEED);
+		// set vars
+		let caller: AccountId = whitelisted_caller();
 		let beneficiary: AccountId = account("beneficiary", 0, SEED);
-		
-		set_balance(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD));
-		set_balance(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN));
-		set_balance(SALECOIN, &caller, 1000000000 * dollar(SALECOIN));
-		set_balance(NATIVE, &caller, 1000000000 * dollar(NATIVE));
-
+		// set balance
+		set_balance(LAUNCHPAD, &caller, 100_000 * dollar(LAUNCHPAD));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		set_balance(SALECOIN, &caller, 100_000 * dollar(SALECOIN));
+		set_balance(NATIVE, &caller, 100_000 * dollar(NATIVE));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		// make proposal
 		LaunchPad::make_proposal(
-			RawOrigin::Root.into(),
+			RawOrigin::Signed(caller).into(),
 			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
-			beneficiary, STABLECOIN, SALECOIN, 10, 10_000, 100_000, 20
+			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
-		LaunchPad::approve_proposal(RawOrigin::Root.into(), 1)?;
-		System::set_block_number(150u32.into());
-	}: _(RawOrigin::Signed(caller), 1, 1_000 * dollar(STABLECOIN))
+		// approve proposal
+		LaunchPad::approve_proposal(RawOrigin::Root.into(), SALECOIN)?;
+		LaunchPad::activate_waiting_campaign(RawOrigin::Root.into(), SALECOIN)?;
+		// execute => contribute 
+	}: _(RawOrigin::Signed(whitelisted_caller()), SALECOIN, 1_000 * dollar(STABLECOIN))
+	verify {
+		assert_eq!(
+			<Currencies as MultiCurrency<_>>::total_balance(STABLECOIN, &whitelisted_caller()),
+			198_000 * dollar(STABLECOIN)
+		);
+	}
 
-	// burn NFT token
+	// Claim contribution allocation
 	claim_contribution_allocation {
-		let caller: AccountId = account("caller", 0, SEED);
+		// set vars
+		let caller: AccountId = whitelisted_caller();
 		let beneficiary: AccountId = account("beneficiary", 0, SEED);
-
-		set_balance(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD));
-		set_balance(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN));
-		set_balance(SALECOIN, &caller, 1000000000 * dollar(SALECOIN));
-		set_balance(NATIVE, &caller, 1000000000 * dollar(NATIVE));
-
+		let now: BlockNumber = 258000;
+		// set balance
+		set_balance(LAUNCHPAD, &caller, 100_000 * dollar(LAUNCHPAD));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		set_balance(SALECOIN, &caller, 100_000 * dollar(SALECOIN));
+		set_balance(NATIVE, &caller, 100_000 * dollar(NATIVE));
+		set_balance(STABLECOIN, &beneficiary, 100_000 * dollar(STABLECOIN));
+		System::set_block_number(now);
+		// make proposal
 		LaunchPad::make_proposal(
-			RawOrigin::Root.into(),
+			RawOrigin::Signed(caller).into(),
 			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
-			beneficiary, STABLECOIN, SALECOIN, 10, 10_000, 100_000, 20
+			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
-		LaunchPad::approve_proposal(RawOrigin::Root.into(), 1)?;
-		System::set_block_number(150u32.into());
-		LaunchPad::contribute(RawOrigin::Root.into(), 1, 1_000 * dollar(STABLECOIN))?;
-		System::set_block_number(171u32.into());
-	}: _(RawOrigin::Signed(caller), 1)
+		// approve proposal
+		LaunchPad::approve_proposal(RawOrigin::Root.into(), SALECOIN)?;
+		LaunchPad::activate_waiting_campaign(RawOrigin::Root.into(), SALECOIN)?;
+		// contribute
+		System::set_block_number(now + 1);
+		let _ = LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		let __ = LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		// execute => claim 
+		System::set_block_number(now + 41);
+		LaunchPad::on_initialize(now + 41);
+	}: _(RawOrigin::Signed(whitelisted_caller()), SALECOIN)
 
-	// burn NFT token with remark
+
+	// Claim campaign Fundraise
 	claim_campaign_fundraise {
-		let caller: AccountId = account("caller", 0, SEED);
+		// set vars
+		let caller: AccountId = whitelisted_caller();
 		let beneficiary: AccountId = account("beneficiary", 0, SEED);
-
-		set_balance(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD));
-		set_balance(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN));
-		set_balance(SALECOIN, &caller, 1000000000 * dollar(SALECOIN));
-		set_balance(NATIVE, &caller, 1000000000 * dollar(NATIVE));
-
+		let now: BlockNumber = 258000;
+		// set balance
+		set_balance(LAUNCHPAD, &caller, 100_000 * dollar(LAUNCHPAD));
+		set_balance(STABLECOIN, &caller, 200_000 * dollar(STABLECOIN));
+		set_balance(SALECOIN, &caller, 100_000 * dollar(SALECOIN));
+		set_balance(NATIVE, &caller, 100_000 * dollar(NATIVE));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		System::set_block_number(now);
+		// make proposal
 		LaunchPad::make_proposal(
-			RawOrigin::Root.into(),
+			RawOrigin::Signed(caller).into(),
 			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
-			beneficiary, STABLECOIN, SALECOIN, 10, 10_000, 100_000, 20
+			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
-		LaunchPad::approve_proposal(RawOrigin::Root.into(), 1)?;
-		System::set_block_number(150u32.into());
-		LaunchPad::contribute(RawOrigin::Root.into(), 1, 1_000 * dollar(STABLECOIN))?;
-		System::set_block_number(192u32.into());
-		LaunchPad::on_initialize(System::block_number());
-	}: _(RawOrigin::Signed(caller), 1)
+		// approve proposal
+		LaunchPad::approve_proposal(RawOrigin::Root.into(), SALECOIN)?;
+		LaunchPad::activate_waiting_campaign(RawOrigin::Root.into(), SALECOIN)?;
+		// contribute
+		System::set_block_number(now + 1);
+		let _ = LaunchPad::contribute(RawOrigin::Signed(whitelisted_caller()).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		let __ = LaunchPad::contribute(RawOrigin::Signed(beneficiary).into(), SALECOIN, 50_000 * dollar(STABLECOIN));
+		// execute => claim 
+		System::set_block_number(now + 61);
+		LaunchPad::on_initialize(now + 61);
+	}: _(RawOrigin::Signed(whitelisted_caller()), SALECOIN)
 
-	// destroy NFT class
+	// Approve Proposal
 	approve_proposal {
-		let caller: AccountId = account("caller", 0, SEED);
+		// set vars
+		let caller: AccountId = whitelisted_caller();
 		let beneficiary: AccountId = account("beneficiary", 0, SEED);
-
-		set_balance(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD));
-		set_balance(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN));
-		set_balance(SALECOIN, &caller, 1000000000 * dollar(SALECOIN));
-		set_balance(NATIVE, &caller, 1000000000 * dollar(NATIVE));
-
+		let now: BlockNumber = 258000;
+		// set balance
+		set_balance(LAUNCHPAD, &caller, 100_000 * dollar(LAUNCHPAD));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		set_balance(SALECOIN, &caller, 100_000 * dollar(SALECOIN));
+		set_balance(NATIVE, &caller, 100_000 * dollar(NATIVE));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		System::set_block_number(now);
+		//make proposal
 		LaunchPad::make_proposal(
-			RawOrigin::Root.into(),
+			RawOrigin::Signed(caller).into(),
 			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
-			beneficiary, STABLECOIN, SALECOIN, 10, 10_000, 100_000, 20
+			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
-	}: _(RawOrigin::Root, 1)
+		// execute => contribute 
+	}: _(RawOrigin::Root, SALECOIN)
 
+	// Reject Proposal
 	reject_proposal {
-		let caller: AccountId = account("caller", 0, SEED);
+		// set vars
+		let caller: AccountId = whitelisted_caller();
 		let beneficiary: AccountId = account("beneficiary", 0, SEED);
-		
-		set_balance(LAUNCHPAD, &caller, 1000000000 * dollar(LAUNCHPAD));
-		set_balance(STABLECOIN, &caller, 1000000000 * dollar(STABLECOIN));
-		set_balance(SALECOIN, &caller, 1000000000 * dollar(SALECOIN));
-		set_balance(NATIVE, &caller, 1000000000 * dollar(NATIVE));
-
+		let now: BlockNumber = 258000;
+		// set balance
+		set_balance(LAUNCHPAD, &caller, 100_000 * dollar(LAUNCHPAD));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		set_balance(SALECOIN, &caller, 100_000 * dollar(SALECOIN));
+		set_balance(NATIVE, &caller, 100_000 * dollar(NATIVE));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		System::set_block_number(now);
+		// make proposal
 		LaunchPad::make_proposal(
-			RawOrigin::Root.into(),
+			RawOrigin::Signed(caller).into(),
 			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
-			beneficiary, STABLECOIN, SALECOIN, 10, 10_000, 100_000, 20
+			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
-	}: _(RawOrigin::Root, 1)
+		// execute => contribute 
+		System::set_block_number(now + 41);
+	}: _(RawOrigin::Root, SALECOIN)
+
+	// Activate waiting campaign
+	activate_waiting_campaign {
+		// set vars
+		let caller: AccountId = whitelisted_caller();
+		let beneficiary: AccountId = account("beneficiary", 0, SEED);
+		let now: BlockNumber = 258000;
+		// set balance
+		set_balance(LAUNCHPAD, &caller, 100_000 * dollar(LAUNCHPAD));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		set_balance(SALECOIN, &caller, 100_000 * dollar(SALECOIN));
+		set_balance(NATIVE, &caller, 100_000 * dollar(NATIVE));
+		set_balance(STABLECOIN, &caller, 100_000 * dollar(STABLECOIN));
+		System::set_block_number(now);
+		// make proposal
+		LaunchPad::make_proposal(
+			RawOrigin::Signed(caller).into(),
+			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
+			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
+			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
+		)?;
+		// approve proposal
+		LaunchPad::approve_proposal(RawOrigin::Root.into(), SALECOIN)?;
+		// execute => contribute 
+	}: _(RawOrigin::Root, SALECOIN)
 }
 
 #[cfg(test)]

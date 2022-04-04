@@ -13,7 +13,7 @@ fn proposal_info_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -43,17 +43,16 @@ fn proposal_info_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_eq!(
-                LaunchPad::proposal_info(0),
+                LaunchPad::proposal_info(TEST),
                 Some(CampaignInfo {
-                    id:0,
+                    id:TEST,
                     origin: ALICE,
                     project_name: "Project Name".as_bytes().to_vec(),
                     project_logo: "Project Logo".as_bytes().to_vec(),
@@ -94,7 +93,7 @@ fn campaign_info_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -124,25 +123,24 @@ fn campaign_info_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             LaunchPad::on_initialize(23);
             assert_eq!(
-                LaunchPad::campaign_info(0),
+                LaunchPad::campaign_info(TEST),
                 Some(CampaignInfo {
-                    id:0,
+                    id:TEST,
                     origin: ALICE,
                     project_name: "Project Name".as_bytes().to_vec(),
                     project_logo: "Project Logo".as_bytes().to_vec(),
@@ -256,23 +254,6 @@ fn make_proposal_does_not_work() {
                 ),
                 Error::<Runtime>::GoalBelowMinimumRaise
             );
-            assert_noop!(
-                LaunchPad::make_proposal(
-                    Origin::signed(ALICE),
-                    "Project Name".as_bytes().to_vec(),
-                    "Project Logo".as_bytes().to_vec(),
-                    "Project Description".as_bytes().to_vec(),
-                    "Project Website".as_bytes().to_vec(),
-                    BOB,
-                    SETUSD,
-                    TEST,
-                    10,
-                    10_001,
-                    100_000,
-                    20
-                ),
-                Error::<Runtime>::GoalNotAllignedWithAllocation
-            );
         });
 }
 
@@ -283,7 +264,7 @@ fn contribute_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -313,35 +294,34 @@ fn contribute_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 10_000
             ));
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    0,
+                    TEST,
                     10
                 ),
                 Error::<Runtime>::ContributionTooSmall
@@ -349,7 +329,7 @@ fn contribute_works() {
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    0,
+                    TEST,
                     100_001
                 ),
                 Error::<Runtime>::ContributionCurrencyNotEnough
@@ -364,7 +344,7 @@ fn contribute_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -394,29 +374,28 @@ fn contribute_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
 
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    0,
+                    TEST,
                     10
                 ),
                 Error::<Runtime>::CampaignNotFound
             );
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    0,
+                    TEST,
                     10_000
                 ),
                 Error::<Runtime>::CampaignNotActive
@@ -431,7 +410,7 @@ fn claim_contribution_allocation_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -461,29 +440,28 @@ fn claim_contribution_allocation_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 50_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 50_000
             ));
            
@@ -491,7 +469,7 @@ fn claim_contribution_allocation_works() {
             System::set_block_number(41);
             assert_ok!(LaunchPad::claim_contribution_allocation(
                 Origin::signed(BOB),
-                0,
+                TEST,
             ));
         });
 }
@@ -503,7 +481,7 @@ fn claim_contribution_allocation_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -533,16 +511,15 @@ fn claim_contribution_allocation_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
@@ -550,20 +527,20 @@ fn claim_contribution_allocation_does_not_work() {
             LaunchPad::on_initialize(23);
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 10_000
             ));
 
             assert_noop!(
                 LaunchPad::claim_contribution_allocation(
                     Origin::signed(BOB),
-                    0,
+                    TEST,
                 ),
                 Error::<Runtime>::CampaignFailed
             );
@@ -577,7 +554,7 @@ fn claim_campaign_fundraise_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -607,29 +584,28 @@ fn claim_campaign_fundraise_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 50_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 50_000
             ));
            
@@ -637,7 +613,7 @@ fn claim_campaign_fundraise_works() {
             System::set_block_number(41);
             assert_ok!(LaunchPad::claim_campaign_fundraise(
                 Origin::signed(ALICE),
-                0,
+                TEST,
             ));
         });
 }
@@ -649,7 +625,7 @@ fn claim_campaign_fundraise_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -679,16 +655,15 @@ fn claim_campaign_fundraise_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
@@ -696,36 +671,28 @@ fn claim_campaign_fundraise_does_not_work() {
             LaunchPad::on_initialize(23);
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 10_000
             ));
-
-            assert_noop!(
-                LaunchPad::claim_campaign_fundraise(
-                    Origin::signed(ALICE),
-                    0,
-                ),
-                Error::<Runtime>::CampaignStillActive
-            );
 
             LaunchPad::on_initialize(41);
             System::set_block_number(41);
 
             assert_ok!(LaunchPad::claim_campaign_fundraise(
                 Origin::signed(ALICE),
-                0,
+                TEST,
             ));
             
             assert_noop!(
                 LaunchPad::claim_campaign_fundraise(
                     Origin::signed(CHARLIE),
-                    0,
+                    TEST,
                 ),
                 Error::<Runtime>::WrongOrigin
             );
@@ -739,7 +706,7 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -769,16 +736,15 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
                 is_ended: false,
                 is_claimed: true,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
@@ -786,13 +752,13 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
             LaunchPad::on_initialize(23);
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 10_000
             ));
 
@@ -802,7 +768,7 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
             assert_noop!(
                 LaunchPad::claim_campaign_fundraise(
                     Origin::signed(BOB),
-                    0,
+                    TEST,
                 ),
                 Error::<Runtime>::CampaignAlreadyClaimed
             );
@@ -816,7 +782,7 @@ fn approve_proposal_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -846,23 +812,22 @@ fn approve_proposal_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 10_000
             ));
         });
@@ -875,7 +840,7 @@ fn approve_proposal_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -905,24 +870,23 @@ fn approve_proposal_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_noop!(
                 LaunchPad::approve_proposal(
                     Origin::signed(11),
-                    0,
+                    TEST,
                 ),
                 Error::<Runtime>::ProposalAlreadyApproved
             );
             assert_noop!(
                 LaunchPad::approve_proposal(
                     Origin::signed(11),
-                    1,
+                    SETUSD,
                 ),
                 Error::<Runtime>::ProposalNotFound
             );
@@ -936,7 +900,7 @@ fn reject_proposal_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -966,16 +930,15 @@ fn reject_proposal_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::reject_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
         });
 }
@@ -987,7 +950,7 @@ fn reject_proposal_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -1017,24 +980,23 @@ fn reject_proposal_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_noop!(
                 LaunchPad::reject_proposal(
                     Origin::signed(11),
-                    0,
+                    TEST,
                 ),
                 Error::<Runtime>::ProposalAlreadyApproved
             );
             assert_noop!(
                 LaunchPad::reject_proposal(
                     Origin::signed(11),
-                    1,
+                    SETUSD,
                 ),
                 Error::<Runtime>::ProposalNotFound
             );
@@ -1048,7 +1010,7 @@ fn get_contributors_count_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -1078,37 +1040,36 @@ fn get_contributors_count_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let proposal_id = 0;
-            <Proposals<Runtime>>::insert(proposal_id, proposal.clone());
+            <Proposals<Runtime>>::insert(TEST, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(proposal_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 10_000
             ));
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                0,
+                TEST,
                 10_000
             ));
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(CHARLIE),
-                0,
+                TEST,
                 10_000
             ));
             
-            assert_eq!(LaunchPad::get_contributors_count(0), 3);
+            assert_eq!(LaunchPad::get_contributors_count(TEST), 3);
         });
 }
 
@@ -1123,7 +1084,7 @@ fn get_total_amounts_raised_works() {
                 vec![]
             );
             let campaign = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -1153,29 +1114,28 @@ fn get_total_amounts_raised_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let campaign_id = 0;
-            <Proposals<Runtime>>::insert(campaign_id, campaign.clone());
+            <Proposals<Runtime>>::insert(TEST, campaign.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(campaign_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Campaign should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 50_000
             ));
 
             LaunchPad::on_initialize(40);
 
-            assert_ok!(LaunchPad::on_successful_campaign(<frame_system::Pallet<Runtime>>::block_number(), campaign_id));
+            assert_ok!(LaunchPad::on_successful_campaign(<frame_system::Pallet<Runtime>>::block_number(), TEST));
             assert_eq!(
                 LaunchPad::get_total_amounts_raised(),
                 vec![
@@ -1196,7 +1156,7 @@ fn on_retire_works() {
                 vec![]
             );
             let campaign = CampaignInfo {
-                id: 0,
+                id: TEST,
                 origin: ALICE.clone(),
                 project_name: "Project Name".as_bytes().to_vec(),
                 project_logo: "Project Logo".as_bytes().to_vec(),
@@ -1226,391 +1186,27 @@ fn on_retire_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            let campaign_id = 0;
-            <Proposals<Runtime>>::insert(campaign_id, campaign.clone());
+            <Proposals<Runtime>>::insert(TEST, campaign.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(campaign_id),
+                <Proposals<Runtime>>::contains_key(TEST),
                 "Campaign should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                0,
+                TEST,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                0,
+                TEST,
                 50_000
             ));
 
             LaunchPad::on_initialize(60);
 
-            assert_ok!(LaunchPad::on_retire(campaign_id));
-        });
-}
-
-#[test]
-fn get_all_proposals_work()  {
-    ExtBuilder::default()
-        .one_hundred_thousand_for_all()
-        .build()
-        .execute_with(|| {
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(ALICE),
-                "Project Name1".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(BOB),
-                "Project Name2".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(CHARLIE),
-                "Project Name3".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(ALICE),
-                "Project Name4".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_eq!(
-                LaunchPad::all_proposals(),
-                vec![
-                    (   
-                        CampaignInfo {
-                            id: 4,
-                            origin: ALICE.clone(),
-                            project_name: "Project Name4".as_bytes().to_vec(),
-                            project_logo: "Project Logo".as_bytes().to_vec(),
-                            project_description: "Project Description".as_bytes().to_vec(),
-                            project_website: "Project Website".as_bytes().to_vec(),
-                            beneficiary: BOB,
-                            pool: LaunchPad::campaign_pool(4),
-                            raise_currency: SETUSD,
-                            sale_token: TEST,
-                            token_price: 10,
-                            crowd_allocation: 10_000,
-                            goal: 100_000,
-                            raised: 0,
-                            contributors_count: 0,
-                            contributions: Vec::new(),
-                            period: 20,
-                            campaign_start: 0,
-                            campaign_end: 0,
-                            campaign_retirement_period: 0,
-                            proposal_retirement_period: 0,
-                            is_approved: false,
-                            is_rejected: false,
-                            is_waiting: false,
-                            is_active: false,
-                            is_successful: false,
-                            is_failed: false,
-                            is_ended: false,
-                            is_claimed: false,
-                        }
-                    ),
-                    (   
-                        CampaignInfo {
-                            id: 2,
-                            origin: BOB.clone(),
-                            project_name: "Project Name2".as_bytes().to_vec(),
-                            project_logo: "Project Logo".as_bytes().to_vec(),
-                            project_description: "Project Description".as_bytes().to_vec(),
-                            project_website: "Project Website".as_bytes().to_vec(),
-                            beneficiary: BOB,
-                            pool: LaunchPad::campaign_pool(2),
-                            raise_currency: SETUSD,
-                            sale_token: TEST,
-                            token_price: 10,
-                            crowd_allocation: 10_000,
-                            goal: 100_000,
-                            raised: 0,
-                            contributors_count: 0,
-                            contributions: Vec::new(),
-                            period: 20,
-                            campaign_start: 0,
-                            campaign_end: 0,
-                            campaign_retirement_period: 0,
-                            proposal_retirement_period: 0,
-                            is_approved: false,
-                            is_rejected: false,
-                            is_waiting: false,
-                            is_active: false,
-                            is_successful: false,
-                            is_failed: false,
-                            is_ended: false,
-                            is_claimed: false,
-                        }
-                    ),
-                    (   
-                        CampaignInfo {
-                            id: 1,
-                            origin: ALICE.clone(),
-                            project_name: "Project Name1".as_bytes().to_vec(),
-                            project_logo: "Project Logo".as_bytes().to_vec(),
-                            project_description: "Project Description".as_bytes().to_vec(),
-                            project_website: "Project Website".as_bytes().to_vec(),
-                            beneficiary: BOB,
-                            pool: LaunchPad::campaign_pool(1),
-                            raise_currency: SETUSD,
-                            sale_token: TEST,
-                            token_price: 10,
-                            crowd_allocation: 10_000,
-                            goal: 100_000,
-                            raised: 0,
-                            contributors_count: 0,
-                            contributions: Vec::new(),
-                            period: 20,
-                            campaign_start: 0,
-                            campaign_end: 0,
-                            campaign_retirement_period: 0,
-                            proposal_retirement_period: 0,
-                            is_approved: false,
-                            is_rejected: false,
-                            is_waiting: false,
-                            is_active: false,
-                            is_successful: false,
-                            is_failed: false,
-                            is_ended: false,
-                            is_claimed: false,
-                        }
-                    ),
-                    (   
-                        CampaignInfo {
-                            id: 3,
-                            origin: CHARLIE.clone(),
-                            project_name: "Project Name3".as_bytes().to_vec(),
-                            project_logo: "Project Logo".as_bytes().to_vec(),
-                            project_description: "Project Description".as_bytes().to_vec(),
-                            project_website: "Project Website".as_bytes().to_vec(),
-                            beneficiary: BOB,
-                            pool: LaunchPad::campaign_pool(3),
-                            raise_currency: SETUSD,
-                            sale_token: TEST,
-                            token_price: 10,
-                            crowd_allocation: 10_000,
-                            goal: 100_000,
-                            raised: 0,
-                            contributors_count: 0,
-                            contributions: Vec::new(),
-                            period: 20,
-                            campaign_start: 0,
-                            campaign_end: 0,
-                            campaign_retirement_period: 0,
-                            proposal_retirement_period: 0,
-                            is_approved: false,
-                            is_rejected: false,
-                            is_waiting: false,
-                            is_active: false,
-                            is_successful: false,
-                            is_failed: false,
-                            is_ended: false,
-                            is_claimed: false,
-                        }
-                    )
-                ]
-            )
-        });
-}
-
-#[test]
-fn get_all_campaigns_work()  {
-    ExtBuilder::default()
-        .one_hundred_thousand_for_all()
-        .build()
-        .execute_with(|| {
-            System::set_block_number(1);
-            LaunchPad::on_initialize(1);
-
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(ALICE),
-                "Project Name1".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(BOB),
-                "Project Name2".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(CHARLIE),
-                "Project Name3".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_ok!(LaunchPad::make_proposal(
-                Origin::signed(ALICE),
-                "Project Name4".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
-                BOB,
-                SETUSD,
-                TEST,
-                10,
-                10_000,
-                100_000,
-                20
-            ));
-
-            assert_ok!(LaunchPad::approve_proposal(
-                Origin::signed(11),
-                1,
-            ));
-            
-            assert_ok!(LaunchPad::approve_proposal(
-                Origin::signed(11),
-                2,
-            ));
-            
-            
-            System::set_block_number(21);
-            LaunchPad::on_initialize(21);
-
-            assert_eq!(
-                LaunchPad::all_campaigns(),
-                vec![
-                    (   
-                        CampaignInfo {
-                            id: 2,
-                            origin: BOB.clone(),
-                            project_name: "Project Name2".as_bytes().to_vec(),
-                            project_logo: "Project Logo".as_bytes().to_vec(),
-                            project_description: "Project Description".as_bytes().to_vec(),
-                            project_website: "Project Website".as_bytes().to_vec(),
-                            beneficiary: BOB,
-                            pool: LaunchPad::campaign_pool(2),
-                            raise_currency: SETUSD,
-                            sale_token: TEST,
-                            token_price: 10,
-                            crowd_allocation: 10_000,
-                            goal: 100_000,
-                            raised: 0,
-                            contributors_count: 0,
-                            contributions: Vec::new(),
-                            period: 20,
-                            campaign_start: 21,
-                            campaign_end: 41,
-                            campaign_retirement_period: 0,
-                            proposal_retirement_period: 0,
-                            is_approved: true,
-                            is_rejected: false,
-                            is_waiting: false,
-                            is_active: true,
-                            is_successful: false,
-                            is_failed: false,
-                            is_ended: false,
-                            is_claimed: false,
-                        }
-                    ),
-                    (   
-                        CampaignInfo {
-                            id: 1,
-                            origin: ALICE.clone(),
-                            project_name: "Project Name1".as_bytes().to_vec(),
-                            project_logo: "Project Logo".as_bytes().to_vec(),
-                            project_description: "Project Description".as_bytes().to_vec(),
-                            project_website: "Project Website".as_bytes().to_vec(),
-                            beneficiary: BOB,
-                            pool: LaunchPad::campaign_pool(1),
-                            raise_currency: SETUSD,
-                            sale_token: TEST,
-                            token_price: 10,
-                            crowd_allocation: 10_000,
-                            goal: 100_000,
-                            raised: 0,
-                            contributors_count: 0,
-                            contributions: Vec::new(),
-                            period: 20,
-                            campaign_start: 21,
-                            campaign_end: 41,
-                            campaign_retirement_period: 0,
-                            proposal_retirement_period: 0,
-                            is_approved: true,
-                            is_rejected: false,
-                            is_waiting: true,
-                            is_active: false,
-                            is_successful: false,
-                            is_failed: false,
-                            is_ended: false,
-                            is_claimed: false,
-                        }
-                    )
-                ]
-            )
+            assert_ok!(LaunchPad::on_retire(TEST));
         });
 }

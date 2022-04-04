@@ -137,6 +137,7 @@ impl Config for Runtime {
 	type ProposalRetirementPeriod = RetirementPeriod;
 	type UpdateOrigin = EnsureSignedBy<Eleven, AccountId>;
 	type PalletId = CrowdsalesPalletId;
+	type WeightInfo = ();
 }
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Runtime>;

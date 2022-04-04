@@ -1532,6 +1532,7 @@ impl launchpad_crowdsales::Config for Runtime {
 	type ProposalRetirementPeriod = ProposalRetirementPeriod;
 	type UpdateOrigin = EnsureRootOrHalfShuraCouncil;
 	type PalletId = CrowdsalesPalletId;
+	type WeightInfo = weights::launchpad_crowdsales::WeightInfo<Runtime>;
 }
 
 
