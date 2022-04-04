@@ -11,17 +11,6 @@ init:
 build:
 	cd s-node && cargo build --manifest-path node/Cargo.toml --features runtime-benchmarks,with-ethereum-compatibility --release
 
-.PHONY: check
-check:
-	SKIP_WASM_BUILD=1 cargo check
-
-.PHONY: check-all
-check-all: check-runtime check-benchmarks
-
-.PHONY: watch
-watch:
-	SKIP_WASM_BUILD=1 cargo watch -c -x build
-
 .PHONY: tests
 tests:
 	cd ./s-node/launchpad-crowdsales && cargo test --verbose
