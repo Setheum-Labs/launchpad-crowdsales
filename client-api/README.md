@@ -8,11 +8,7 @@ Getting started with launchpad-crowdsales client API
 
 ### Client
 
-Use `yarn` to install the dependencies and run the application:
-
-```bash
-npm install --global yarn
-```
+Use `yarn` or `yarn run install` to install the dependencies and run the application, make sure yarn is installed
 
 To run the sample demo node run the following:
 
@@ -36,17 +32,7 @@ To make a `launchpad-crowdsales` proposal, access the `make_proposal` extrinsic.
 
 ```javascript
 api.tx.launchPad.makeProposal(
-    projectName,
-    projectLogo,
-    projectDescription,
-    projectWebsite,
-    beneficiary,
-    raiseCurrency,
-    saleToken,
-    tokenPrice,
-    crowdAllocation,
-    goal,
-    period,
+    beneficiary, raiseCurrency, saleToken, tokenPrice, crowdAllocation, goal, period
 )
 ```
 
