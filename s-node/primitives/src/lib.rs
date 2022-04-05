@@ -187,14 +187,6 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	pub id: CurrencyId,
 	/// Campaign Creator
 	pub origin: AccountId,
-	/// Project Name
-	pub project_name: Vec<u8>,
-	/// Project Logo
-	pub project_logo: Vec<u8>,
-	/// Project Description
-	pub project_description: Vec<u8>,
-	/// Project Website
-	pub project_website: Vec<u8>,
 	/// Campaign Beneficiary
 	pub beneficiary: AccountId,
 	/// Campaign Pool AccountId

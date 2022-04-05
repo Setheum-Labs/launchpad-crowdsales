@@ -19,14 +19,6 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	pub id: CurrencyId,
 	/// Campaign Creator
 	pub origin: AccountId,
-	/// Project Name
-	pub project_name: Vec<u8>,
-	/// Project Logo
-	pub project_logo: Vec<u8>,
-	/// Project Description
-	pub project_description: Vec<u8>,
-	/// Project Website
-	pub project_website: Vec<u8>,
 	/// Campaign Beneficiary
 	pub beneficiary: AccountId,
 	/// Campaign Pool AccountId
@@ -87,10 +79,6 @@ pub trait Proposal<AccountId, BlockNumber> {
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: AccountId,
-		project_name: Vec<u8>,
-		project_logo: Vec<u8>,
-		project_description: Vec<u8>,
-		project_website: Vec<u8>,
 		beneficiary: AccountId,
 		raise_currency: CurrencyId,
 		sale_token: CurrencyId,

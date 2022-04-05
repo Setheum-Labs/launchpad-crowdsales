@@ -310,10 +310,6 @@ pub mod module {
 		#[transactional]
 		pub fn make_proposal(
 			origin: OriginFor<T>,
-			project_name: Vec<u8>,
-			project_logo: Vec<u8>,
-			project_description: Vec<u8>,
-			project_website: Vec<u8>,
 			beneficiary: T::AccountId,
 			raise_currency: CurrencyIdOf<T>,
 			sale_token: CurrencyIdOf<T>,
@@ -334,10 +330,6 @@ pub mod module {
 			// Create proposal and add id.
 			Self::new_proposal(
 				who.clone(),
-				project_name,
-				project_logo,
-				project_description,
-				project_website,
 				beneficiary,
 				raise_currency,
 				sale_token,
@@ -491,10 +483,6 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: T::AccountId,
-		project_name: Vec<u8>,
-		project_logo: Vec<u8>,
-		project_description: Vec<u8>,
-		project_website: Vec<u8>,
 		beneficiary: T::AccountId,
 		raise_currency: Self::CurrencyId,
 		sale_token: Self::CurrencyId,
@@ -511,10 +499,6 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let proposal = CampaignInfo {
 			id: sale_token,
 			origin: origin.clone(),
-			project_name: project_name,
-			project_logo: project_logo,
-			project_description: project_description,
-			project_website: project_website,
 			beneficiary: beneficiary,
 			pool: Self::campaign_pool(pool_id),
 			raise_currency: raise_currency,
