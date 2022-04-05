@@ -295,6 +295,7 @@
     "AssetId": "CurrencyId",
     "Keys": "SessionKeys1",
     "BalanceOf": "Balance",
+    "CampaignId": "u32",
     "CampaignInfo": {
         "origin": "AccountId",
         "beneficiary": "AccountId",

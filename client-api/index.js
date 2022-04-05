@@ -11,220 +11,51 @@ async function main() {
     const keyring = new Keyring({type: 'sr25519'});
 
     const alice = keyring.addFromUri('//Alice');
-    const bob = keyring.addFromUri('//Bob');
-    
+    const treasury = "VQi5wfR3UZnJY4KvxG2uVPP6n6CS296xTznrzqs3hfD4Fyp6x";
+
     // make proposal
     console.info('Making Proposal');
     await includedInBlock(alice, api.tx.launchPad.makeProposal(
-        bob, { TOKEN: "SETUSD" }, { TOKEN: "SERP" }, 10, 10000, 100000, 20,
+        treasury, { Token: "SETUSD" }, { Token: "SERP" }, 10, 10000, 100000, 20,
     ));
-    campaignInfo = (await api.query.launchPad.campaigns({ TOKEN: "SETUSD" })).unwrap();
-    console.info(`Campaign Token: ${campaignInfo.id.toHuman()}`);
-    console.info(`Campaign Creator: ${campaignInfo.origin.toHuman()}`);
-    console.info(`Beneficiary: ${campaignInfo.beneficiary.toHuman()}`);
-    console.info(`Campaign Pool Account: ${campaignInfo.pool.toHuman()}`);
-    console.info(`Raise Currency: ${campaignInfo.raiseCurrency.toHuman()}`);
-    console.info(`Sale Token: ${campaignInfo.saleToken.toHuman()}`);
-    console.info(`Token Price: ${campaignInfo.tokenPrce.toHuman()}`);
-    console.info(`Crowd Allocation: ${campaignInfo.crowdAllocation.toHuman()}`);
-    console.info(`Goal: ${campaignInfo.goal.toHuman()}`);
-    console.info(`Raised: ${campaignInfo.raised.toHuman()}`);
-    console.info(`Contributors Count: ${campaignInfo.contributorsCount.toHuman()}`);
-    console.info(`Contributions: ${campaignInfo.contributions.toHuman()}`);
-    console.info(`Active Campaign Period: ${campaignInfo.period.toHuman()}`);
-    console.info(`Campaign Starts at: ${campaignInfo.campaignStart.toHuman()}`);
-    console.info(`Campaign Ends at: ${campaignInfo.campaignEnd.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.campaignRetirementPeriod.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.proposalRetirementPeriod.toHuman()}`);
-    console.info(`Is Campaign Approved?: ${campaignInfo.isApproved.toHuman()}`);
-    console.info(`Is Campaign Rejected?: ${campaignInfo.isRejected.toHuman()}`);
-    console.info(`Is Campaign Waiting?: ${campaignInfo.isWaiting.toHuman()}`);
-    console.info(`Is Campaign Active?: ${campaignInfo.isActive.toHuman()}`);
-    console.info(`Is Campaign Successful?: ${campaignInfo.isSuccessful.toHuman()}`);
-    console.info(`Is Campaign Failed?: ${campaignInfo.isFailed.toHuman()}`);
-    console.info(`Is Campaign Ended?: ${campaignInfo.isEnded.toHuman()}`);
-    console.info(`Is Campaign Claimed?: ${campaignInfo.isClaimed.toHuman()}`);
-
+    const result = await api.query.launchPad.proposals({ Token: "SERP" });
+    console.info(result.toHuman());
 
     // contribute
     console.info('Contributing');
-    await includedInBlock(alice, api.tx.launchPad.contribute({ TOKEN: "SETUSD" }, 100));
-    campaignInfo = (await api.query.launchPad.campaigns({ TOKEN: "SETUSD" })).unwrap();
-    console.info(`Campaign Token: ${campaignInfo.id.toHuman()}`);
-    console.info(`Campaign Creator: ${campaignInfo.origin.toHuman()}`);
-    console.info(`Beneficiary: ${campaignInfo.beneficiary.toHuman()}`);
-    console.info(`Campaign Pool Account: ${campaignInfo.pool.toHuman()}`);
-    console.info(`Raise Currency: ${campaignInfo.raiseCurrency.toHuman()}`);
-    console.info(`Sale Token: ${campaignInfo.saleToken.toHuman()}`);
-    console.info(`Token Price: ${campaignInfo.tokenPrce.toHuman()}`);
-    console.info(`Crowd Allocation: ${campaignInfo.crowdAllocation.toHuman()}`);
-    console.info(`Goal: ${campaignInfo.goal.toHuman()}`);
-    console.info(`Raised: ${campaignInfo.raised.toHuman()}`);
-    console.info(`Contributors Count: ${campaignInfo.contributorsCount.toHuman()}`);
-    console.info(`Contributions: ${campaignInfo.contributions.toHuman()}`);
-    console.info(`Active Campaign Period: ${campaignInfo.period.toHuman()}`);
-    console.info(`Campaign Starts at: ${campaignInfo.campaignStart.toHuman()}`);
-    console.info(`Campaign Ends at: ${campaignInfo.campaignEnd.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.campaignRetirementPeriod.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.proposalRetirementPeriod.toHuman()}`);
-    console.info(`Is Campaign Approved?: ${campaignInfo.isApproved.toHuman()}`);
-    console.info(`Is Campaign Rejected?: ${campaignInfo.isRejected.toHuman()}`);
-    console.info(`Is Campaign Waiting?: ${campaignInfo.isWaiting.toHuman()}`);
-    console.info(`Is Campaign Active?: ${campaignInfo.isActive.toHuman()}`);
-    console.info(`Is Campaign Successful?: ${campaignInfo.isSuccessful.toHuman()}`);
-    console.info(`Is Campaign Failed?: ${campaignInfo.isFailed.toHuman()}`);
-    console.info(`Is Campaign Ended?: ${campaignInfo.isEnded.toHuman()}`);
-    console.info(`Is Campaign Claimed?: ${campaignInfo.isClaimed.toHuman()}`);
+    await includedInBlock(alice, api.tx.launchPad.contribute({ Token: "SERP" }, 100));
+    campaignInfo = (await api.query.launchPad.campaigns({ Token: "SERP" }));
+    console.info(campaignInfo.toHuman());
 
     // claim contribution allocation
     console.info('Claiming Contribution Allocation');
-    await includedInBlock(alice, api.tx.launchPad.claimContributionAllocation({ TOKEN: "SETUSD" }));
-    campaignInfo = (await api.query.launchPad.campaigns({ TOKEN: "SETUSD" })).unwrap();
-    console.info(`Campaign Token: ${campaignInfo.id.toHuman()}`);
-    console.info(`Campaign Creator: ${campaignInfo.origin.toHuman()}`);
-    console.info(`Beneficiary: ${campaignInfo.beneficiary.toHuman()}`);
-    console.info(`Campaign Pool Account: ${campaignInfo.pool.toHuman()}`);
-    console.info(`Raise Currency: ${campaignInfo.raiseCurrency.toHuman()}`);
-    console.info(`Sale Token: ${campaignInfo.saleToken.toHuman()}`);
-    console.info(`Token Price: ${campaignInfo.tokenPrce.toHuman()}`);
-    console.info(`Crowd Allocation: ${campaignInfo.crowdAllocation.toHuman()}`);
-    console.info(`Goal: ${campaignInfo.goal.toHuman()}`);
-    console.info(`Raised: ${campaignInfo.raised.toHuman()}`);
-    console.info(`Contributors Count: ${campaignInfo.contributorsCount.toHuman()}`);
-    console.info(`Contributions: ${campaignInfo.contributions.toHuman()}`);
-    console.info(`Active Campaign Period: ${campaignInfo.period.toHuman()}`);
-    console.info(`Campaign Starts at: ${campaignInfo.campaignStart.toHuman()}`);
-    console.info(`Campaign Ends at: ${campaignInfo.campaignEnd.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.campaignRetirementPeriod.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.proposalRetirementPeriod.toHuman()}`);
-    console.info(`Is Campaign Approved?: ${campaignInfo.isApproved.toHuman()}`);
-    console.info(`Is Campaign Rejected?: ${campaignInfo.isRejected.toHuman()}`);
-    console.info(`Is Campaign Waiting?: ${campaignInfo.isWaiting.toHuman()}`);
-    console.info(`Is Campaign Active?: ${campaignInfo.isActive.toHuman()}`);
-    console.info(`Is Campaign Successful?: ${campaignInfo.isSuccessful.toHuman()}`);
-    console.info(`Is Campaign Failed?: ${campaignInfo.isFailed.toHuman()}`);
-    console.info(`Is Campaign Ended?: ${campaignInfo.isEnded.toHuman()}`);
-    console.info(`Is Campaign Claimed?: ${campaignInfo.isClaimed.toHuman()}`);
+    await includedInBlock(alice, api.tx.launchPad.claimContributionAllocation({ Token: "SERP" }));
+    campaignInfo = (await api.query.launchPad.campaigns({ Token: "SERP" }));
+    console.info(campaignInfo.toHuman());
 
     // claim campaign fundraise
     console.info('Claiming Campaign Fundraise');
-    await includedInBlock(alice, api.tx.launchPad.claimCampaignFundraise({ TOKEN: "SETUSD" }));
-    campaignInfo = (await api.query.launchPad.campaigns({ TOKEN: "SETUSD" })).unwrap();
-    console.info(`Campaign Token: ${campaignInfo.id.toHuman()}`);
-    console.info(`Campaign Creator: ${campaignInfo.origin.toHuman()}`);
-    console.info(`Beneficiary: ${campaignInfo.beneficiary.toHuman()}`);
-    console.info(`Campaign Pool Account: ${campaignInfo.pool.toHuman()}`);
-    console.info(`Raise Currency: ${campaignInfo.raiseCurrency.toHuman()}`);
-    console.info(`Sale Token: ${campaignInfo.saleToken.toHuman()}`);
-    console.info(`Token Price: ${campaignInfo.tokenPrce.toHuman()}`);
-    console.info(`Crowd Allocation: ${campaignInfo.crowdAllocation.toHuman()}`);
-    console.info(`Goal: ${campaignInfo.goal.toHuman()}`);
-    console.info(`Raised: ${campaignInfo.raised.toHuman()}`);
-    console.info(`Contributors Count: ${campaignInfo.contributorsCount.toHuman()}`);
-    console.info(`Contributions: ${campaignInfo.contributions.toHuman()}`);
-    console.info(`Active Campaign Period: ${campaignInfo.period.toHuman()}`);
-    console.info(`Campaign Starts at: ${campaignInfo.campaignStart.toHuman()}`);
-    console.info(`Campaign Ends at: ${campaignInfo.campaignEnd.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.campaignRetirementPeriod.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.proposalRetirementPeriod.toHuman()}`);
-    console.info(`Is Campaign Approved?: ${campaignInfo.isApproved.toHuman()}`);
-    console.info(`Is Campaign Rejected?: ${campaignInfo.isRejected.toHuman()}`);
-    console.info(`Is Campaign Waiting?: ${campaignInfo.isWaiting.toHuman()}`);
-    console.info(`Is Campaign Active?: ${campaignInfo.isActive.toHuman()}`);
-    console.info(`Is Campaign Successful?: ${campaignInfo.isSuccessful.toHuman()}`);
-    console.info(`Is Campaign Failed?: ${campaignInfo.isFailed.toHuman()}`);
-    console.info(`Is Campaign Ended?: ${campaignInfo.isEnded.toHuman()}`);
-    console.info(`Is Campaign Claimed?: ${campaignInfo.isClaimed.toHuman()}`);
+    await includedInBlock(alice, api.tx.launchPad.claimCampaignFundraise({ Token: "SERP" }));
+    campaignInfo = (await api.query.launchPad.campaigns({ Token: "SERP" }));
+    console.info(campaignInfo.toHuman());
 
     // approve proposal
     console.info('Approving Proposal');
-    await includedInBlock(alice, api.tx.launchPad.approveProposal({ TOKEN: "SETUSD" }));
-    campaignInfo = (await api.query.launchPad.campaigns({ TOKEN: "SETUSD" })).unwrap();
-    console.info(`Campaign Token: ${campaignInfo.id.toHuman()}`);
-    console.info(`Campaign Creator: ${campaignInfo.origin.toHuman()}`);
-    console.info(`Beneficiary: ${campaignInfo.beneficiary.toHuman()}`);
-    console.info(`Campaign Pool Account: ${campaignInfo.pool.toHuman()}`);
-    console.info(`Raise Currency: ${campaignInfo.raiseCurrency.toHuman()}`);
-    console.info(`Sale Token: ${campaignInfo.saleToken.toHuman()}`);
-    console.info(`Token Price: ${campaignInfo.tokenPrce.toHuman()}`);
-    console.info(`Crowd Allocation: ${campaignInfo.crowdAllocation.toHuman()}`);
-    console.info(`Goal: ${campaignInfo.goal.toHuman()}`);
-    console.info(`Raised: ${campaignInfo.raised.toHuman()}`);
-    console.info(`Contributors Count: ${campaignInfo.contributorsCount.toHuman()}`);
-    console.info(`Contributions: ${campaignInfo.contributions.toHuman()}`);
-    console.info(`Active Campaign Period: ${campaignInfo.period.toHuman()}`);
-    console.info(`Campaign Starts at: ${campaignInfo.campaignStart.toHuman()}`);
-    console.info(`Campaign Ends at: ${campaignInfo.campaignEnd.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.campaignRetirementPeriod.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.proposalRetirementPeriod.toHuman()}`);
-    console.info(`Is Campaign Approved?: ${campaignInfo.isApproved.toHuman()}`);
-    console.info(`Is Campaign Rejected?: ${campaignInfo.isRejected.toHuman()}`);
-    console.info(`Is Campaign Waiting?: ${campaignInfo.isWaiting.toHuman()}`);
-    console.info(`Is Campaign Active?: ${campaignInfo.isActive.toHuman()}`);
-    console.info(`Is Campaign Successful?: ${campaignInfo.isSuccessful.toHuman()}`);
-    console.info(`Is Campaign Failed?: ${campaignInfo.isFailed.toHuman()}`);
-    console.info(`Is Campaign Ended?: ${campaignInfo.isEnded.toHuman()}`);
-    console.info(`Is Campaign Claimed?: ${campaignInfo.isClaimed.toHuman()}`);
+    await includedInBlock(alice, api.tx.launchPad.approveProposal({ Token: "SERP" }));
+    campaignInfo = (await api.query.launchPad.campaigns({ Token: "SERP" }));
+    console.info(campaignInfo.toHuman());
 
     // reject proposal
     console.info('Rejecting Proposal');
-    await includedInBlock(alice, api.tx.launchPad.rejectProposal({ TOKEN: "SETUSD" }));
-    campaignInfo = (await api.query.launchPad.campaigns({ TOKEN: "SETUSD" })).unwrap();
-    console.info(`Campaign Token: ${campaignInfo.id.toHuman()}`);
-    console.info(`Campaign Creator: ${campaignInfo.origin.toHuman()}`);
-    console.info(`Beneficiary: ${campaignInfo.beneficiary.toHuman()}`);
-    console.info(`Campaign Pool Account: ${campaignInfo.pool.toHuman()}`);
-    console.info(`Raise Currency: ${campaignInfo.raiseCurrency.toHuman()}`);
-    console.info(`Sale Token: ${campaignInfo.saleToken.toHuman()}`);
-    console.info(`Token Price: ${campaignInfo.tokenPrce.toHuman()}`);
-    console.info(`Crowd Allocation: ${campaignInfo.crowdAllocation.toHuman()}`);
-    console.info(`Goal: ${campaignInfo.goal.toHuman()}`);
-    console.info(`Raised: ${campaignInfo.raised.toHuman()}`);
-    console.info(`Contributors Count: ${campaignInfo.contributorsCount.toHuman()}`);
-    console.info(`Contributions: ${campaignInfo.contributions.toHuman()}`);
-    console.info(`Active Campaign Period: ${campaignInfo.period.toHuman()}`);
-    console.info(`Campaign Starts at: ${campaignInfo.campaignStart.toHuman()}`);
-    console.info(`Campaign Ends at: ${campaignInfo.campaignEnd.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.campaignRetirementPeriod.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.proposalRetirementPeriod.toHuman()}`);
-    console.info(`Is Campaign Approved?: ${campaignInfo.isApproved.toHuman()}`);
-    console.info(`Is Campaign Rejected?: ${campaignInfo.isRejected.toHuman()}`);
-    console.info(`Is Campaign Waiting?: ${campaignInfo.isWaiting.toHuman()}`);
-    console.info(`Is Campaign Active?: ${campaignInfo.isActive.toHuman()}`);
-    console.info(`Is Campaign Successful?: ${campaignInfo.isSuccessful.toHuman()}`);
-    console.info(`Is Campaign Failed?: ${campaignInfo.isFailed.toHuman()}`);
-    console.info(`Is Campaign Ended?: ${campaignInfo.isEnded.toHuman()}`);
-    console.info(`Is Campaign Claimed?: ${campaignInfo.isClaimed.toHuman()}`);
+    await includedInBlock(alice, api.tx.launchPad.rejectProposal({ Token: "SERP" }));
+    campaignInfo = (await api.query.launchPad.campaigns({ Token: "SERP" }));
+    console.info(campaignInfo.toHuman());
 
     // activate waiting campaign
     console.info('Activating Waiting Campaign');
-    await includedInBlock(alice, api.tx.launchPad.activateWaitingCampaign({ TOKEN: "SETUSD" }));
-    campaignInfo = (await api.query.launchPad.campaigns({ TOKEN: "SETUSD" })).unwrap();
-    console.info(`Campaign Token: ${campaignInfo.id.toHuman()}`);
-    console.info(`Campaign Creator: ${campaignInfo.origin.toHuman()}`);
-    console.info(`Beneficiary: ${campaignInfo.beneficiary.toHuman()}`);
-    console.info(`Campaign Pool Account: ${campaignInfo.pool.toHuman()}`);
-    console.info(`Raise Currency: ${campaignInfo.raiseCurrency.toHuman()}`);
-    console.info(`Sale Token: ${campaignInfo.saleToken.toHuman()}`);
-    console.info(`Token Price: ${campaignInfo.tokenPrce.toHuman()}`);
-    console.info(`Crowd Allocation: ${campaignInfo.crowdAllocation.toHuman()}`);
-    console.info(`Goal: ${campaignInfo.goal.toHuman()}`);
-    console.info(`Raised: ${campaignInfo.raised.toHuman()}`);
-    console.info(`Contributors Count: ${campaignInfo.contributorsCount.toHuman()}`);
-    console.info(`Contributions: ${campaignInfo.contributions.toHuman()}`);
-    console.info(`Active Campaign Period: ${campaignInfo.period.toHuman()}`);
-    console.info(`Campaign Starts at: ${campaignInfo.campaignStart.toHuman()}`);
-    console.info(`Campaign Ends at: ${campaignInfo.campaignEnd.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.campaignRetirementPeriod.toHuman()}`);
-    console.info(`Campaign Retirement Period: ${campaignInfo.proposalRetirementPeriod.toHuman()}`);
-    console.info(`Is Campaign Approved?: ${campaignInfo.isApproved.toHuman()}`);
-    console.info(`Is Campaign Rejected?: ${campaignInfo.isRejected.toHuman()}`);
-    console.info(`Is Campaign Waiting?: ${campaignInfo.isWaiting.toHuman()}`);
-    console.info(`Is Campaign Active?: ${campaignInfo.isActive.toHuman()}`);
-    console.info(`Is Campaign Successful?: ${campaignInfo.isSuccessful.toHuman()}`);
-    console.info(`Is Campaign Failed?: ${campaignInfo.isFailed.toHuman()}`);
-    console.info(`Is Campaign Ended?: ${campaignInfo.isEnded.toHuman()}`);
-    console.info(`Is Campaign Claimed?: ${campaignInfo.isClaimed.toHuman()}`);
+    await includedInBlock(alice, api.tx.launchPad.activateWaitingCampaign({ Token: "SERP" }));
+    campaignInfo = (await api.query.launchPad.campaigns({ Token: "SERP" }));
+    console.info(campaignInfo.toHuman());
 
 }
 
