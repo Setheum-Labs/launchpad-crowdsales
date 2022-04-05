@@ -15,10 +15,6 @@ fn proposal_info_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "project.website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -54,10 +50,6 @@ fn proposal_info_works() {
                 Some(CampaignInfo {
                     id:TEST,
                     origin: ALICE,
-                    project_name: "Project Name".as_bytes().to_vec(),
-                    project_logo: "Project Logo".as_bytes().to_vec(),
-                    project_description: "Project Description".as_bytes().to_vec(),
-                    project_website: "project.website".as_bytes().to_vec(),
                     beneficiary: BOB,
                     pool: LaunchPad::campaign_pool(0),
                     raise_currency: SETUSD,
@@ -95,10 +87,6 @@ fn campaign_info_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "project.website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -142,10 +130,6 @@ fn campaign_info_works() {
                 Some(CampaignInfo {
                     id:TEST,
                     origin: ALICE,
-                    project_name: "Project Name".as_bytes().to_vec(),
-                    project_logo: "Project Logo".as_bytes().to_vec(),
-                    project_description: "Project Description".as_bytes().to_vec(),
-                    project_website: "project.website".as_bytes().to_vec(),
                     beneficiary: BOB,
                     pool: LaunchPad::campaign_pool(0),
                     raise_currency: SETUSD,
@@ -182,10 +166,6 @@ fn make_proposal_works() {
         .execute_with(|| {
             assert_ok!(LaunchPad::make_proposal(
                 Origin::signed(ALICE),
-                "Project Name".as_bytes().to_vec(),
-                "Project Logo".as_bytes().to_vec(),
-                "Project Description".as_bytes().to_vec(),
-                "Project Website".as_bytes().to_vec(),
                 BOB,
                 SETUSD,
                 TEST,
@@ -206,10 +186,6 @@ fn make_proposal_does_not_work() {
             assert_noop!(
                 LaunchPad::make_proposal(
                     Origin::signed(ALICE),
-                    "Project Name".as_bytes().to_vec(),
-                    "Project Logo".as_bytes().to_vec(),
-                    "Project Description".as_bytes().to_vec(),
-                    "Project Website".as_bytes().to_vec(),
                     BOB,
                     SETUSD,
                     TEST,
@@ -223,10 +199,6 @@ fn make_proposal_does_not_work() {
             assert_noop!(
                 LaunchPad::make_proposal(
                     Origin::signed(ALICE),
-                    "Project Name".as_bytes().to_vec(),
-                    "Project Logo".as_bytes().to_vec(),
-                    "Project Description".as_bytes().to_vec(),
-                    "Project Website".as_bytes().to_vec(),
                     BOB,
                     SETUSD,
                     TEST,
@@ -240,10 +212,6 @@ fn make_proposal_does_not_work() {
             assert_noop!(
                 LaunchPad::make_proposal(
                     Origin::signed(ALICE),
-                    "Project Name".as_bytes().to_vec(),
-                    "Project Logo".as_bytes().to_vec(),
-                    "Project Description".as_bytes().to_vec(),
-                    "Project Website".as_bytes().to_vec(),
                     BOB,
                     SETUSD,
                     TEST,
@@ -266,10 +234,6 @@ fn contribute_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -346,10 +310,6 @@ fn contribute_does_not_work() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -412,10 +372,6 @@ fn claim_contribution_allocation_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -483,10 +439,6 @@ fn claim_contribution_allocation_does_not_work() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -556,10 +508,6 @@ fn claim_campaign_fundraise_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -627,10 +575,6 @@ fn claim_campaign_fundraise_does_not_work() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -708,10 +652,6 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -784,10 +724,6 @@ fn approve_proposal_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -842,10 +778,6 @@ fn approve_proposal_does_not_work() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -902,10 +834,6 @@ fn reject_proposal_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -952,10 +880,6 @@ fn reject_proposal_does_not_work() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -1012,10 +936,6 @@ fn get_contributors_count_works() {
             let proposal = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -1086,10 +1006,6 @@ fn get_total_amounts_raised_works() {
             let campaign = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
@@ -1158,10 +1074,6 @@ fn on_retire_works() {
             let campaign = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
-                project_name: "Project Name".as_bytes().to_vec(),
-                project_logo: "Project Logo".as_bytes().to_vec(),
-                project_description: "Project Description".as_bytes().to_vec(),
-                project_website: "Project Website".as_bytes().to_vec(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
                 raise_currency: SETUSD,
