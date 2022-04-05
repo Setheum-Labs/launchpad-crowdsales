@@ -110,10 +110,6 @@ pub trait Proposal<AccountId, BlockNumber> {
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: AccountId,
-		project_name: Vec<u8>,
-		project_logo: Vec<u8>,
-		project_description: Vec<u8>,
-		project_website: Vec<u8>,
 		beneficiary: AccountId,
 		raise_currency: CurrencyId,
 		sale_token: CurrencyId,

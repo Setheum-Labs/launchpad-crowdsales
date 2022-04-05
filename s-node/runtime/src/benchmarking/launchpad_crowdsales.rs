@@ -49,10 +49,6 @@ runtime_benchmarks! {
 		let proposal = CampaignInfo {
 			id: SALECOIN,
 			origin: caller.clone(),
-			project_name: "Project Name".as_bytes().to_vec(),
-			project_logo: "Project Logo".as_bytes().to_vec(),
-			project_description: "Project Description".as_bytes().to_vec(),
-			project_website: "project.website".as_bytes().to_vec(),
 			beneficiary: beneficiary.clone(),
 			pool: LaunchPad::campaign_pool(0),
 			raise_currency: STABLECOIN,
@@ -83,7 +79,6 @@ runtime_benchmarks! {
 			for proposal in LaunchPad::proposals(SALECOIN).iter().into_iter() {
 				LaunchPad::make_proposal(
 					RawOrigin::Root.into(),
-					vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 					whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 					10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 				)?;
@@ -110,7 +105,6 @@ runtime_benchmarks! {
 		Currencies::deposit(NATIVE, &caller, 1000000000 * dollar(NATIVE))?;
 	}: _(
 		RawOrigin::Signed(caller),
-		vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 		beneficiary, STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 		10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 	)
@@ -129,7 +123,6 @@ runtime_benchmarks! {
 		// make proposal
 		LaunchPad::make_proposal(
 			RawOrigin::Signed(caller).into(),
-			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
@@ -161,7 +154,6 @@ runtime_benchmarks! {
 		// make proposal
 		LaunchPad::make_proposal(
 			RawOrigin::Signed(caller).into(),
-			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
@@ -194,7 +186,6 @@ runtime_benchmarks! {
 		// make proposal
 		LaunchPad::make_proposal(
 			RawOrigin::Signed(caller).into(),
-			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
@@ -226,7 +217,6 @@ runtime_benchmarks! {
 		//make proposal
 		LaunchPad::make_proposal(
 			RawOrigin::Signed(caller).into(),
-			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
@@ -249,7 +239,6 @@ runtime_benchmarks! {
 		// make proposal
 		LaunchPad::make_proposal(
 			RawOrigin::Signed(caller).into(),
-			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
@@ -273,7 +262,6 @@ runtime_benchmarks! {
 		// make proposal
 		LaunchPad::make_proposal(
 			RawOrigin::Signed(caller).into(),
-			vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256], vec![b'X'; 256],
 			whitelisted_caller(), STABLECOIN, SALECOIN, 10 * dollar(STABLECOIN),
 			10_000 * dollar(SALECOIN), 100_000 * dollar(STABLECOIN), 20
 		)?;
@@ -289,5 +277,5 @@ mod tests {
 	use crate::benchmarking::utils::tests::new_test_ext;
 	use orml_benchmarking::impl_benchmark_test_suite;
 
-	impl_benchmark_test_suite!(new_test_ext(),);
+	impl_benchmark_test_suite!(new_test_ext());
 }
