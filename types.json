@@ -297,10 +297,6 @@
     "BalanceOf": "Balance",
     "CampaignInfo": {
         "origin": "AccountId",
-        "projectName": "Vec<u8>",
-        "projectLogo": "Vec<u8>",
-        "projectDescription": "Vec<u8>",
-        "projectWebsite": "Vec<u8>",
         "beneficiary": "AccountId",
         "raiseCurrency": "CurrencyId",
         "saleToken": "CurrencyId",
