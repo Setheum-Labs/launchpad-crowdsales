@@ -39,7 +39,7 @@ use sp_runtime::{
 
 pub use currency::{CurrencyId, DexShare, TokenSymbol};
 
-use sp_std::vec::Vec;
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
@@ -182,7 +182,7 @@ pub enum DataProviderId {
 // #[derive(Encode, Decode, Clone, RuntimeDebug, PartialEq, Eq)]
 #[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
-pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
+pub struct CampaignInfo<AccountId: Ord, Balance, BlockNumber> {
 	/// The Campaign Id
 	pub id: CurrencyId,
 	/// Campaign Creator
@@ -207,7 +207,7 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	pub contributors_count: u32,
 	/// The Campaign contributions
 	/// account_id, contribution, allocation, bool:claimed_allocation
-	pub contributions: Vec<(AccountId, Balance, Balance, bool)>,
+	pub contributions: BTreeMap<AccountId, (Balance, Balance, bool)>,
 	/// The period that the campaign runs for.
 	pub period: BlockNumber,
 	/// The time when the campaign starts.

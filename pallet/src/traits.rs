@@ -2,19 +2,25 @@
 
 use codec::{Decode, Encode};
 use sp_runtime::{
-	DispatchError, DispatchResult,
+	DispatchError, DispatchResult, RuntimeDebug
 };
 use sp_std::{
 	cmp::{Eq, PartialEq},
+	collections::btree_map::BTreeMap,
+	vec::Vec
 };
+
+#[cfg(feature = "std")]
+use serde::{Deserialize, Serialize};
 
 pub type CampaignId = u32;
 pub type CurrencyId = u32;
 pub type Balance = u32;
 
 /// The Structure of a Campaign info.
-#[cfg_attr(feature = "std", derive(PartialEq, Eq, Encode, Decode, Debug, Clone))]
-pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
+#[derive(Encode, Decode, Clone, Eq, PartialEq, RuntimeDebug)]
+#[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
+pub struct CampaignInfo<AccountId: Ord, Balance, BlockNumber> {
 	/// The Campaign Id
 	pub id: CurrencyId,
 	/// Campaign Creator
@@ -39,7 +45,7 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 	pub contributors_count: u32,
 	/// The Campaign contributions
 	/// account_id, contribution, allocation, bool:claimed_allocation
-	pub contributions: Vec<(AccountId, Balance, Balance, bool)>,
+	pub contributions: BTreeMap<AccountId, (Balance, Balance, bool)>,
 	/// The period that the campaign runs for.
 	pub period: BlockNumber,
 	/// The time when the campaign starts.
@@ -69,7 +75,7 @@ pub struct CampaignInfo<AccountId, Balance, BlockNumber> {
 }
 
 /// Abstraction over th Launchpad Proposal system.
-pub trait Proposal<AccountId, BlockNumber> {
+pub trait Proposal<AccountId: Ord, BlockNumber> {
 	type CurrencyId;
 
 	/// The Campaign Proposal info of `id`
@@ -96,7 +102,7 @@ pub trait Proposal<AccountId, BlockNumber> {
 }
 
 /// Abstraction over the Launchpad Campaign system.
-pub trait CampaignManager<AccountId, BlockNumber> {
+pub trait CampaignManager<AccountId: Ord, BlockNumber> {
 	type CurrencyId;
 
 	/// The Campaign info of `id`

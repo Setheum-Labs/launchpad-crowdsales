@@ -100,7 +100,7 @@ pub trait AuctionManager<AccountId> {
 	fn get_total_target_in_auction() -> Self::Balance;
 }
 /// Abstraction over th Launchpad Proposal system.
-pub trait Proposal<AccountId, BlockNumber> {
+pub trait Proposal<AccountId: Ord, BlockNumber> {
 	type CurrencyId;
 
 	/// Get all proposals
@@ -127,7 +127,7 @@ pub trait Proposal<AccountId, BlockNumber> {
 }
 
 /// Abstraction over the Launchpad Campaign system.
-pub trait CampaignManager<AccountId, BlockNumber> {
+pub trait CampaignManager<AccountId: Ord, BlockNumber> {
 	type CurrencyId;
 
 	/// The Campaign info of `id`

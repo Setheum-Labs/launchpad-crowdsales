@@ -15,7 +15,7 @@
         "goal": "Balance",
         "raised": "Balance",
         "contributorsCount": "u32",
-        "contributions": "Vec<(AccountId, Balance, Balance, bool)>",
+        "contributions": "BTreeMap<AccountId, (Balance, Balance, bool)>",
         "period": "BlockNumber",
         "campaignStart": "BlockNumber",
         "campaignEnd": "BlockNumber",

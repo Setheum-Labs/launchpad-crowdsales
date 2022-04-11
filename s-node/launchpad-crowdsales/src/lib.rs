@@ -21,7 +21,7 @@ use primitives::{Balance, CampaignId, CampaignInfo, CurrencyId};
 use support::{CampaignManager, Proposal};
 
 use sp_std::{
-	vec::Vec,
+	collections::btree_map::BTreeMap, vec::Vec,
 };
 use sp_runtime::{traits::{AccountIdConversion, Zero}, DispatchResult};
 
@@ -507,7 +507,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 			goal: goal,
 			raised: Zero::zero(),
 			contributors_count: Zero::zero(),
-			contributions: Vec::new(),
+			contributions: BTreeMap::new(),
 			period: period,
 			campaign_start: Zero::zero(),
 			campaign_end: Zero::zero(),
@@ -653,7 +653,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 			let mut found = false;
 			// if campaign.contributions exists, check for who's contribution
 			
-			for (contributor, contribution, allocation, _) in campaign.contributions.iter_mut() {
+			for (contributor, (contribution, allocation, _)) in campaign.contributions.iter_mut() {
 				if contributor == &who {
 
 					found = true;
@@ -664,7 +664,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 				break;
 			}
 			if !found {
-				campaign.contributions.push((who, amount, allocated, false));
+				campaign.contributions.insert(who, (amount, allocated, false));
 				campaign.raised += amount;
 			}
 
@@ -686,13 +686,13 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let  campaign_p = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
 		// Check if the contributor exists in the contributions of the campaign, if not return error
-		ensure!(campaign.contributions.iter().any(|(contributor, _, _, _)| *contributor == who), Error::<T>::ContributionNotFound);
+		ensure!(campaign.contributions.iter().any(|(contributor, (_, _, _))| *contributor == who), Error::<T>::ContributionNotFound);
 
 		// Ensure campaign is successfully ended
 		Self::ensure_successfully_ended_campaign(id)?;
 
 		// Check if the contributor exists and transfer allocated from pool to contributor
-		for (contributor, _, allocation, claimed) in campaign.contributions.iter_mut() {
+		for (contributor, (_, allocation, claimed)) in campaign.contributions.iter_mut() {
 			let transfer_allocation = T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &who, *allocation).is_ok();
 
 			if contributor == &who && *claimed == false && transfer_allocation {
@@ -701,7 +701,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 				// complete claim by adding campaign update to storage
 				<Campaigns<T>>::insert(id, campaign);
 
-				for (contributor_p, _, allocation_p, claimed_p) in campaign_p.contributions.iter() {
+				for (contributor_p, (_, allocation_p, claimed_p)) in campaign_p.contributions.iter() {
 					if contributor_p == &who && *claimed_p == false {		
 						// transfer allocation
 						T::MultiCurrency::transfer(campaign_p.sale_token, &campaign_p.pool, &who, *allocation_p).unwrap();
