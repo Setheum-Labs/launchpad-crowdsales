@@ -1,0 +1,15 @@
+{
+  "name": "client-api",
+  "version": "0.1.0",
+  "main": "index.js",
+  "license": "Apache-2.0",
+  "private": true,
+  "scripts": {
+    "run-node": "cd ../s-node && RUST_BACKTRACE=1 cargo run --manifest-path node/Cargo.toml --features with-ethereum-compatibility  -- --dev --tmp",
+    "run-client": "node index.js"
+  },
+  "dependencies": {
+    "@polkadot/api": "^7.12.1",
+    "bignumber.js": "^9.0.1"
+  }
+}
