@@ -13,6 +13,11 @@
     },
     "AuthorityOrigin": "DelayedOrigin",
     "StorageValue": "Vec<u8>",
+    "GraduallyUpdate": {
+        "key": "StorageKey",
+        "targetValue": "StorageValue",
+        "perBlock": "StorageValue"
+    },
     "StorageKeyBytes": "Vec<u8>",
     "StorageValueBytes": "Vec<u8>",
     "RpcDataProviderId": "Text",
@@ -45,24 +50,78 @@
     },
     "DispatchId": "u32",
     "Price": "FixedU128",
-    "OrmlCurrencyId": "CurrencyId",
-    "PoolInfo": {
-        "totalShares": "Share"
-    },
-    "CompactBalance": "Compact<Balance>",
-    "Share": "u128",
-    "OracleValue": "Price",
-    "Amount": "i128",
-    "AmountOf": "Amount",
-    "AuctionId": "u32",
-    "AuctionIdOf": "AuctionId",
-    "VestingSchedule": {
+    "OrmlVestingSchedule": {
         "start": "BlockNumber",
         "period": "BlockNumber",
         "periodCount": "u32",
         "perPeriod": "Compact<Balance>"
     },
     "VestingScheduleOf": "VestingSchedule",
+    "OrmlCurrencyId": "CurrencyId",
+    "PoolInfo": {
+        "totalShares": "Share",
+        "rewards": "BTreeMap<OrmlCurrencyId, (Balance, Balance)>"
+    },
+    "CompactBalance": "Compact<Balance>",
+    "PoolInfoV0": {
+        "totalShares": "Compact<Share>",
+        "totalRewards": "CompactBalance",
+        "totalWithdrawnRewards": "CompactBalance"
+    },
+    "Share": "u128",
+    "OracleValue": "Price",
+    "Amount": "i128",
+    "AmountOf": "Amount",
+    "AuctionId": "u32",
+    "AuctionIdOf": "AuctionId",
+    "AuthoritysOriginId": {
+        "_enum": [
+            "Root",
+            "Treasury"
+        ]
+    },
+    "DexShare": {
+        "_enum": {
+            "Token": "TokenSymbol",
+            "Erc20": "EvmAddress"
+        }
+    },
+    "CurrencyId": {
+        "_enum": {
+            "Token": "TokenSymbol",
+            "DEXShare": "(DexShare, DexShare)",
+            "ERC20": "EvmAddress"
+        }
+    },
+    "CurrencyIdOf": "CurrencyId",
+    "CampaignId": "u32",
+    "CampaignIdOf": "CampaignId",
+    "CampaignInfo": {
+        "origin": "AccountId",
+        "beneficiary": "AccountId",
+        "raiseCurrency": "CurrencyId",
+        "saleToken": "CurrencyId",
+        "crowdAllocation": "Balance",
+        "goal": "Balance",
+        "raised": "Balance",
+        "contributorsCount": "u32",
+        "contributions": "BTreeMap<AccountId, (Balance, Balance, bool)>",
+        "period": "BlockNumber",
+        "campaignStart": "BlockNumber",
+        "campaignEnd": "BlockNumber",
+        "campaignRetirementPeriod": "BlockNumber",
+        "proposalRetirementPeriod": "BlockNumber",
+        "isApproved": "bool",
+        "isRejected": "bool",
+        "isWaiting": "bool",
+        "isActive": "bool",
+        "isSuccessful": "bool",
+        "isFailed": "bool",
+        "isEnded": "bool",
+        "isClaimed": "bool"
+    },
+    "CampaignInfoOf": "CampaignInfo",
+    "TradingPair": "(CurrencyId,  CurrencyId)",
     "TokenSymbol": {
         "_enum": {
             "SETM": 0,
@@ -73,37 +132,23 @@
             "SETUSD": 5
         }
     },
-    "DexShare": {
-        "_enum": {
-            "Token": "TokenSymbol",
-            "Erc20": "EvmAddress"
-        }
-    },
     "TokenInfo": {
         "currency_id": "Option<u8>",
-        "name": "Vec<&str>",
-        "symbol": "Vec<&str>",
+        "name": "Option<u8>",
+        "symbol": "Option<u8>",
         "decimals": "Option<u8>"
     },
-    "CurrencyId": {
-        "_enum": {
-            "Token": "TokenSymbol",
-            "DEXShare": "(DexShare, DexShare)",
-            "ERC20": "EvmAddress"
-        }
-    },
-    "CurrencyIdOf": "CurrencyId",
     "SerpStableCurrencyId": {
         "_enum": [
             "SETR",
             "SETUSD"
         ]
     },
-    "AuthoritysOriginId": {
-        "_enum": [
-            "Root",
-            "Treasury"
-        ]
+    "SetheumAssetMetadata": {
+        "name": "Vec<u8>",
+        "symbol": "Vec<u8>",
+        "decimals": "u8",
+        "minimalBalance": "Balance"
     },
     "SetheumDataProviderId": {
         "_enum": [
@@ -111,7 +156,6 @@
             "Setheum"
         ]
     },
-    "TradingPair": "(CurrencyId,  CurrencyId)",
     "PalletBalanceOf": "Balance",
     "CollateralAuctionItem": {
         "refundRecipient": "AccountId",
@@ -167,7 +211,7 @@
     },
     "TradingPairStatus": {
         "_enum": {
-            "NotEnabled": "Null",
+            "Disabled": "Null",
             "Provisioning": "TradingPairProvisionParameters",
             "Enabled": "Null"
         }
@@ -204,12 +248,6 @@
         "storageLimit": "Option<u32>",
         "value": "Option<U128>",
         "data": "Option<Bytes>"
-    },
-    "PoolId": {
-        "_enum": {
-            "Loans": "CurrencyId",
-            "Dex": "CurrencyId"
-        }
     },
     "Position": {
         "collateral": "Balance",
@@ -265,21 +303,6 @@
         ]
     },
     "AtLeast64BitUnsigned": "u128",
-    "ChangeRate": {
-        "_enum": {
-            "NoChange": "Null",
-            "NewValue": "Rate"
-        }
-    },
-    "ChangeRatio": {
-        "_enum": {
-            "NoChange": "Null",
-            "NewValue": "Ratio"
-        }
-    },
-    "BalanceInfo": {
-        "amount": "Balance"
-    },
     "ExchangeRate": "FixedU128",
     "Rate": "FixedU128",
     "Ratio": "FixedU128",
@@ -289,40 +312,11 @@
             "ExactTarget": "(Balance, Balance)"
         }
     },
-    "PublicKey": "[u8; 20]",
-    "DestAddress": "Vec<u8>",
-    "PoolTokenIndex": "u32",
-    "AssetId": "CurrencyId",
-    "Keys": "SessionKeys1",
-    "BalanceOf": "Balance",
-    "CampaignId": "u32",
-    "CampaignInfo": {
-        "origin": "AccountId",
-        "projectName": "Vec<u8>",
-        "projectLogo": "Vec<u8>",
-        "projectDescription": "Vec<u8>",
-        "projectWebsite": "Vec<u8>",
-        "beneficiary": "AccountId",
-        "raiseCurrency": "CurrencyId",
-        "saleToken": "CurrencyId",
-        "crowdAllocation": "Balance",
-        "goal": "Balance",
-        "raised": "Balance",
-        "contributorsCount": "u32",
-        "contributions": "Vec<(AccountId, Balance, Balance, bool)>",
+    "VestingSchedule": {
+        "start": "BlockNumber",
         "period": "BlockNumber",
-        "campaignStart": "BlockNumber",
-        "campaignEnd": "BlockNumber",
-        "campaignRetirementPeriod": "BlockNumber",
-        "proposalRetirementPeriod": "BlockNumber",
-        "isApproved": "bool",
-        "isRejected": "bool",
-        "isWaiting": "bool",
-        "isActive": "bool",
-        "isSuccessful": "bool",
-        "isFailed": "bool",
-        "isEnded": "bool",
-        "isClaimed": "bool"
+        "periodCount": "u32",
+        "perPeriod": "Compact<Balance>"
     },
-    "CampaignInfoOf": "CampaignInfo"
+    "Keys": "SessionKeys1"
 }
