@@ -92,6 +92,14 @@ To run the benchmark, run the following commands:
 make run
 ```
 
+### Run UI
+
+To run the benchmark, run the following commands:
+
+```bash
+make ui
+```
+
 ## License
 
 Apache License Version 2.0

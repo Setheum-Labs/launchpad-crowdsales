@@ -71,6 +71,8 @@ node-runtime = { git = "https://github.com/paritytech/substrate", branch = "polk
 
 orml-oracle-rpc = { path = "../lib-orml/oracle/rpc" }
 
+launchpad-crowdsales-rpc = { path = "../launchpad-crowdsales/rpc" }
+
 module-nft = { path = "../lib-serml/core/tokens/nft" }
 module-evm = { path = "../lib-serml/sevm/evm" }
 module-evm-rpc-runtime-api = { path = "../lib-serml/sevm/evm/rpc/runtime_api" }

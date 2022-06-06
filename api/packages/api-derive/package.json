@@ -15,7 +15,7 @@
   },
   "homepage": "https://github.com/setheum-js/setheum.js",
   "dependencies": {
-    "@setheum.js/types": "3.3.10",
+    "@setheum.js/types": "3.3.11",
     "@babel/runtime": "^7.10.2",
     "@open-web3/orml-types": "^1.0.2-0",
     "@polkadot/api-derive": "^7.1.1"

@@ -117,6 +117,7 @@ module-support = { path = "../lib-serml/support", default-features = false }
 module-vesting = { path = "../lib-serml/core/vesting", default-features = false }
 # launchpad-crowdsales
 launchpad-crowdsales = { path = "../launchpad-crowdsales", default-features = false }
+launchpad-crowdsales-rpc-runtime-api = { path = "../launchpad-crowdsales/rpc/runtime-api", default-features = false }
 
 primitives = { package = "setheum-primitives", path = "../primitives", default-features = false }
 runtime-common = { path = "common", default-features = false }
@@ -218,6 +219,7 @@ std = [
 	"module-evm-rpc-runtime-api/std",
 
 	"launchpad-crowdsales/std",
+	"launchpad-crowdsales-rpc-runtime-api/std"
 ]
 with-ethereum-compatibility = [
 	"evm",

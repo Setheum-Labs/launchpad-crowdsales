@@ -177,6 +177,10 @@ fn make_proposal_works() {
                 100_000,
                 20
             ));
+            assert_ok!(LaunchPad::approve_proposal(
+                Origin::signed(11),
+                TEST,
+            ));
         });
 }
 
@@ -997,83 +1001,11 @@ fn get_contributors_count_works() {
 }
 
 #[test]
-fn get_total_amounts_raised_works() {
-    ExtBuilder::default()
-        .one_hundred_thousand_for_all()
-        .build()
-        .execute_with(|| {
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![]
-            );
-            let campaign = CampaignInfo {
-                id: TEST,
-                origin: ALICE.clone(),
-                beneficiary: BOB,
-                pool: LaunchPad::campaign_pool(0),
-                raise_currency: SETUSD,
-                sale_token: TEST,
-                token_price: 10,
-                crowd_allocation: 10_000,
-                goal: 100_000,
-                raised: 0,
-                contributors_count: 0,
-                contributions: BTreeMap::new(),
-                period: 20,
-                campaign_start: 21,
-                campaign_end: 0,
-                campaign_retirement_period: 0,
-                proposal_retirement_period: 0,
-                is_approved: false,
-                is_rejected: false,
-                is_waiting: true,
-                is_active: true,
-                is_successful: false,
-                is_failed: false,
-                is_ended: false,
-                is_claimed: false,
-            };
-            <Proposals<Runtime>>::insert(TEST, campaign.clone());
-            assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
-                "Campaign should be in storage"
-            );
-            
-            assert_ok!(LaunchPad::approve_proposal(
-                Origin::signed(11),
-                TEST,
-            ));
-            
-            LaunchPad::on_initialize(21);
-
-            assert_ok!(LaunchPad::contribute(
-                Origin::signed(ALICE),
-                TEST,
-                50_000
-            ));
-
-            LaunchPad::on_initialize(40);
-
-            assert_ok!(LaunchPad::on_successful_campaign(<frame_system::Pallet<Runtime>>::block_number(), TEST));
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![
-                    (SETUSD, 50000),
-                ]
-            );
-        });
-}
-
-#[test]
 fn on_retire_works() {
     ExtBuilder::default()
         .one_hundred_thousand_for_all()
         .build()
         .execute_with(|| {
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![]
-            );
             let campaign = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),

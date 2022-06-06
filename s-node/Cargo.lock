@@ -3158,6 +3158,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "launchpad-crowdsales-rpc"
+version = "0.1.0"
+dependencies = [
+ "jsonrpc-core",
+ "jsonrpc-core-client",
+ "jsonrpc-derive",
+ "launchpad-crowdsales-rpc-runtime-api",
+ "parity-scale-codec",
+ "setheum-primitives",
+ "sp-api",
+ "sp-blockchain",
+ "sp-runtime",
+]
+
+[[package]]
+name = "launchpad-crowdsales-rpc-runtime-api"
+version = "0.1.0"
+dependencies = [
+ "parity-scale-codec",
+ "setheum-primitives",
+ "sp-api",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "lazy_static"
 version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8035,6 +8061,7 @@ dependencies = [
  "frame-benchmarking-cli",
  "hex-literal 0.3.4",
  "jsonrpc-core",
+ "launchpad-crowdsales-rpc",
  "module-evm",
  "module-evm-rpc-runtime-api",
  "module-nft",
@@ -8126,6 +8153,7 @@ dependencies = [
  "hex",
  "hex-literal 0.3.4",
  "launchpad-crowdsales",
+ "launchpad-crowdsales-rpc-runtime-api",
  "libsecp256k1 0.3.5",
  "log",
  "module-airdrop",

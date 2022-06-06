@@ -142,6 +142,4 @@ pub trait CampaignManager<AccountId: Ord, BlockNumber> {
 	fn on_retire(id: Self::CurrencyId)-> DispatchResult;
 	/// Get amount of contributors in a campaign
 	fn get_contributors_count(id: Self::CurrencyId) -> u32;
-	/// Get the total amounts raised in protocol
-	fn get_total_amounts_raised() -> Vec<(CurrencyId, Balance)>;
 }

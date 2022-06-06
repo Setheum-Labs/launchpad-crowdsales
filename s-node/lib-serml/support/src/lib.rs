@@ -25,7 +25,7 @@ use codec::{Decode, Encode, FullCodec};
 use frame_support::pallet_prelude::{DispatchClass, Pays, Weight};
 use primitives::{
 	Balance as AsBalance,
-	CampaignInfo, CurrencyId,
+	CampaignId, CampaignInfo, CurrencyId,
 	evm::{CallInfo, EvmAddress},
 	task::TaskResult
 };
@@ -106,7 +106,7 @@ pub trait Proposal<AccountId: Ord, BlockNumber> {
 	/// Get all proposals
 	fn all_proposals() -> Vec<CampaignInfo<AccountId, AsBalance, BlockNumber>>;
 	/// The Campaign Proposal info of `id`
-	fn proposal_info(id: Self::CurrencyId) -> Option<CampaignInfo<AccountId, AsBalance, BlockNumber>>;
+	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<AccountId, AsBalance, BlockNumber>>;
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: AccountId,
@@ -119,11 +119,11 @@ pub trait Proposal<AccountId: Ord, BlockNumber> {
 		period: BlockNumber,
 	) -> DispatchResult;
     /// Approve Proposal by `id` at `now`.
-    fn on_approve_proposal(id: Self::CurrencyId) -> sp_std::result::Result<(), DispatchError>;
+    fn on_approve_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 	/// Reject Proposal by `id` and update storage
-	fn on_reject_proposal(id: Self::CurrencyId) -> sp_std::result::Result<(), DispatchError>;
+	fn on_reject_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 	/// Remove Proposal by `id` from storage
-	fn remove_proposal(id: Self::CurrencyId) -> sp_std::result::Result<(), DispatchError>;
+	fn remove_proposal(id: CampaignId) -> sp_std::result::Result<(), DispatchError>;
 }
 
 /// Abstraction over the Launchpad Campaign system.
@@ -131,44 +131,42 @@ pub trait CampaignManager<AccountId: Ord, BlockNumber> {
 	type CurrencyId;
 
 	/// The Campaign info of `id`
-	fn campaign_info(id: Self::CurrencyId) -> Option<CampaignInfo<AccountId, AsBalance, BlockNumber>>;
+	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<AccountId, AsBalance, BlockNumber>>;
 	/// Get all proposals
 	fn all_campaigns() -> Vec<CampaignInfo<AccountId, AsBalance, BlockNumber>>;
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 		amount: AsBalance,
 	) -> DispatchResult;
 	/// Called when a contribution allocation is claimed
 	fn on_claim_allocation(
 		who: AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 	) -> DispatchResult;
 	/// Called when a campaign's raised fund is claimed
 	fn on_claim_campaign(
 		who: AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 	) -> DispatchResult;
 	/// Called when a failed campaign is claimed by the proposer
 	fn on_claim_failed_campaign(
 		who: AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 	) -> DispatchResult;
 	/// Activate a campaign by `id`
-	fn activate_campaign(id: Self::CurrencyId) -> DispatchResult;
+	fn activate_campaign(id: CampaignId) -> DispatchResult;
 	/// Ensure campaign is Valid and Successfully Ended
-	fn ensure_successfully_ended_campaign(id: Self::CurrencyId) -> DispatchResult;
+	fn ensure_successfully_ended_campaign(id: CampaignId) -> DispatchResult;
 	/// Record Successful Campaign by `id`
-	fn on_successful_campaign(now: BlockNumber, id: Self::CurrencyId) -> DispatchResult ;
+	fn on_successful_campaign(now: BlockNumber, id: CampaignId) -> DispatchResult ;
 	/// Record Failed Campaign by `id`
-	fn on_failed_campaign(now: BlockNumber, id: Self::CurrencyId) -> DispatchResult ;
+	fn on_failed_campaign(now: BlockNumber, id: CampaignId) -> DispatchResult ;
 	/// Called when pool is retired
-	fn on_retire(id: Self::CurrencyId)-> DispatchResult;
+	fn on_retire(id: CampaignId)-> DispatchResult;
 	/// Get amount of contributors in a campaign
-	fn get_contributors_count(id: Self::CurrencyId) -> u32;
-	/// Get the total amounts raised in protocol
-	fn get_total_amounts_raised() -> Vec<(CurrencyId, AsBalance)>;
+	fn get_contributors_count(id: CampaignId) -> u32;
 }
 
 #[derive(RuntimeDebug, Encode, Decode, Clone, Copy, PartialEq, TypeInfo)]

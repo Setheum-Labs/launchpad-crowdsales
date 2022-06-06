@@ -184,7 +184,7 @@ pub enum DataProviderId {
 #[cfg_attr(feature = "std", derive(Serialize, Deserialize))]
 pub struct CampaignInfo<AccountId: Ord, Balance, BlockNumber> {
 	/// The Campaign Id
-	pub id: CurrencyId,
+	pub id: CampaignId,
 	/// Campaign Creator
 	pub origin: AccountId,
 	/// Campaign Beneficiary

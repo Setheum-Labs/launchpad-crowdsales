@@ -9,10 +9,12 @@ import {
   generateDefaultConsts,
   generateDefaultQuery,
   generateDefaultTx,
-  generateDefaultRpc
+  generateDefaultRpc,
+  generateMobx
 } from '@polkadot/typegen/generate';
 // import generateMobx from '@open-web3/api-mobx/scripts/mobx';
 import metadata from '../src/metadata/static-latest';
+// import metaHex from '../src/metadata/static-latest';
 
 import * as defaultDefinations from '@polkadot/types/interfaces/definitions';
 
@@ -44,6 +46,6 @@ generateDefaultConsts('packages/types/src/interfaces/augment-api-consts.ts', met
 // generateDefaultLookup('packages/types/src/interfaces', metadata);
 
 generateDefaultTx('packages/types/src/interfaces/augment-api-tx.ts', metadata, definations, false, customLookupDefinitions);
-// generateDefaultQuery('packages/types/src/interfaces/augment-api-query.ts', metadata, definations, false, customLookupDefinitions);
+generateDefaultQuery('packages/types/src/interfaces/augment-api-query.ts', metadata, definations, false, customLookupDefinitions);
 generateDefaultRpc('packages/types/src/interfaces/augment-api-rpc.ts', definations);
 // generateMobx('packages/types/src/interfaces/augment-api-mobx.ts', metaHex, definations);

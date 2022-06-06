@@ -25,7 +25,7 @@ import type { TransactionAction } from '@polkadot/types/lookup';
 import type { ChangeBalance, ChangeOptionRate, ChangeOptionRatio } from '@setheum.js/types/interfaces/cdpEngine';
 import type { EvmAddress } from '@setheum.js/types/interfaces/evm';
 import type { Attributes, CID, ClassIdOf, Properties, TokenIdOf } from '@setheum.js/types/interfaces/nft';
-import type { Amount, AmountOf, AuctionId, CurrencyId, CurrencyIdOf, SerpStableCurrencyId } from '@setheum.js/types/interfaces/primitives';
+import type { Amount, AmountOf, AuctionId, CampaignId, CurrencyId, CurrencyIdOf, SerpStableCurrencyId } from '@setheum.js/types/interfaces/primitives';
 import type { AccountId, AccountIndex, AsOriginId, Balance, BalanceOf, BlockNumber, Call, CallHashOf, ChangesTrieConfiguration, H256, Hash, Header, KeyValue, LookupSource, Moment, OpaqueCall, OracleKey, OracleValue, PalletsOrigin, Perbill, Percent, Weight } from '@setheum.js/types/interfaces/runtime';
 import type { SwapLimit } from '@setheum.js/types/interfaces/support';
 
@@ -1339,16 +1339,16 @@ declare module '@polkadot/api-base/types/submittable' {
       [key: string]: SubmittableExtrinsicFunction<ApiType>;
     };
     launchPad: {
-      activateWaitingCampaign: AugmentedSubmittable<(id: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [CurrencyIdOf]>;
-      approveProposal: AugmentedSubmittable<(id: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [CurrencyIdOf]>;
-      claimCampaignFundraise: AugmentedSubmittable<(id: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [CurrencyIdOf]>;
-      claimContributionAllocation: AugmentedSubmittable<(id: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [CurrencyIdOf]>;
-      contribute: AugmentedSubmittable<(id: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array, contributionAmount: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [CurrencyIdOf, BalanceOf]>;
+      activateWaitingCampaign: AugmentedSubmittable<(id: CampaignId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [CampaignId]>;
+      approveProposal: AugmentedSubmittable<(id: CampaignId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [CampaignId]>;
+      claimCampaignFundraise: AugmentedSubmittable<(id: CampaignId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [CampaignId]>;
+      claimContributionAllocation: AugmentedSubmittable<(id: CampaignId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [CampaignId]>;
+      contribute: AugmentedSubmittable<(id: CampaignId | AnyNumber | Uint8Array, contributionAmount: BalanceOf | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [CampaignId, BalanceOf]>;
       /**
        * Make a new proposal
        **/
       makeProposal: AugmentedSubmittable<(beneficiary: AccountId | string | Uint8Array, raiseCurrency: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array, saleToken: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array, tokenPrice: BalanceOf | AnyNumber | Uint8Array, crowdAllocation: BalanceOf | AnyNumber | Uint8Array, goal: BalanceOf | AnyNumber | Uint8Array, period: BlockNumber | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [AccountId, CurrencyIdOf, CurrencyIdOf, BalanceOf, BalanceOf, BalanceOf, BlockNumber]>;
-      rejectProposal: AugmentedSubmittable<(id: CurrencyIdOf | { Token: any } | { DEXShare: any } | { ERC20: any } | string | Uint8Array) => SubmittableExtrinsic<ApiType>, [CurrencyIdOf]>;
+      rejectProposal: AugmentedSubmittable<(id: CampaignId | AnyNumber | Uint8Array) => SubmittableExtrinsic<ApiType>, [CampaignId]>;
       /**
        * Generic tx
        **/
