@@ -96,6 +96,7 @@ pub fn create_full<C, P, SC, B>(
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: orml_oracle_rpc::OracleRuntimeApi<Block, DataProviderId, CurrencyId, TimeStampedPrice>,
+	C::Api: launchpad_crowdsales_rpc::LaunchPadRuntimeApi<Block, AccountId, Balance, BlockNumber>,
 	C::Api: EVMRuntimeRPCApi<Block, Balance>,
 	C::Api: sp_consensus_babe::BabeApi<Block>,
 	C::Api: BlockBuilder<Block>,
@@ -106,6 +107,7 @@ pub fn create_full<C, P, SC, B>(
 {
 	use substrate_frame_rpc_system::{FullSystem, SystemApi};
 	use orml_oracle_rpc::{Oracle, OracleApi};
+	use launchpad_crowdsales_rpc::{LaunchPad, LaunchPadApi};
 	use pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApi};
 
 	use sc_consensus_babe_rpc::BabeRpcHandler;
@@ -147,6 +149,7 @@ pub fn create_full<C, P, SC, B>(
 	// `YourRpcStruct` should have a reference to a client, which is needed
 	// to call into the runtime.
 	// `io.extend_with(YourRpcTrait::to_delegate(YourRpcStruct::new(ReferenceToClient, ...)));`
+	io.extend_with(LaunchPadApi::to_delegate(LaunchPad::new(client.clone())));
 	io.extend_with(OracleApi::to_delegate(Oracle::new(client.clone())));
 	io.extend_with(sc_consensus_babe_rpc::BabeApi::to_delegate(BabeRpcHandler::new(
 		client.clone(),

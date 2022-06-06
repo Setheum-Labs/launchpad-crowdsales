@@ -5,6 +5,9 @@
 use super::*;
 use frame_support::{assert_noop, assert_ok};
 use mock::*;
+use sp_std::{
+	collections::btree_map::BTreeMap,
+};
 
 #[test]
 fn proposal_info_works() {
@@ -13,7 +16,7 @@ fn proposal_info_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -24,7 +27,7 @@ fn proposal_info_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -39,16 +42,16 @@ fn proposal_info_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_eq!(
-                LaunchPad::proposal_info(TEST),
+                LaunchPad::proposal_info(0),
                 Some(CampaignInfo {
-                    id:TEST,
+                    id:0,
                     origin: ALICE,
                     beneficiary: BOB,
                     pool: LaunchPad::campaign_pool(0),
@@ -59,7 +62,7 @@ fn proposal_info_works() {
                     goal: 100_000,
                     raised: 0,
                     contributors_count: 0,
-                    contributions: vec![],
+                    contributions: BTreeMap::new(),
                     period: 20,
                     campaign_start: 0,
                     campaign_end: 0,
@@ -85,7 +88,7 @@ fn campaign_info_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -96,7 +99,7 @@ fn campaign_info_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 20,
                 campaign_end: 0,
@@ -111,24 +114,24 @@ fn campaign_info_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
 
             LaunchPad::on_initialize(23);
             assert_eq!(
-                LaunchPad::campaign_info(TEST),
+                LaunchPad::campaign_info(0),
                 Some(CampaignInfo {
-                    id:TEST,
+                    id:0,
                     origin: ALICE,
                     beneficiary: BOB,
                     pool: LaunchPad::campaign_pool(0),
@@ -139,7 +142,7 @@ fn campaign_info_works() {
                     goal: 100_000,
                     raised: 0,
                     contributors_count: 0,
-                    contributions: vec![],
+                    contributions: BTreeMap::new(),
                     period: 20,
                     campaign_start: 20,
                     campaign_end: 40,
@@ -173,6 +176,10 @@ fn make_proposal_works() {
                 10_000,
                 100_000,
                 20
+            ));
+            assert_ok!(LaunchPad::approve_proposal(
+                Origin::signed(11),
+                1,
             ));
         });
 }
@@ -232,7 +239,7 @@ fn contribute_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -243,7 +250,7 @@ fn contribute_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -258,34 +265,34 @@ fn contribute_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 10_000
             ));
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    TEST,
+                    0,
                     10
                 ),
                 Error::<Runtime>::ContributionTooSmall
@@ -293,7 +300,7 @@ fn contribute_works() {
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    TEST,
+                    0,
                     100_001
                 ),
                 Error::<Runtime>::ContributionCurrencyNotEnough
@@ -308,7 +315,7 @@ fn contribute_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -319,7 +326,7 @@ fn contribute_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -334,28 +341,28 @@ fn contribute_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
 
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    TEST,
+                    0,
                     10
                 ),
                 Error::<Runtime>::CampaignNotFound
             );
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             assert_noop!(
                 LaunchPad::contribute(
                     Origin::signed(BOB),
-                    TEST,
+                    0,
                     10_000
                 ),
                 Error::<Runtime>::CampaignNotActive
@@ -370,7 +377,7 @@ fn claim_contribution_allocation_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -381,7 +388,7 @@ fn claim_contribution_allocation_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -396,28 +403,28 @@ fn claim_contribution_allocation_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 50_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 50_000
             ));
            
@@ -425,7 +432,7 @@ fn claim_contribution_allocation_works() {
             System::set_block_number(41);
             assert_ok!(LaunchPad::claim_contribution_allocation(
                 Origin::signed(BOB),
-                TEST,
+                0,
             ));
         });
 }
@@ -437,7 +444,7 @@ fn claim_contribution_allocation_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -448,7 +455,7 @@ fn claim_contribution_allocation_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -463,15 +470,15 @@ fn claim_contribution_allocation_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
@@ -479,20 +486,20 @@ fn claim_contribution_allocation_does_not_work() {
             LaunchPad::on_initialize(23);
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 10_000
             ));
 
             assert_noop!(
                 LaunchPad::claim_contribution_allocation(
                     Origin::signed(BOB),
-                    TEST,
+                    0,
                 ),
                 Error::<Runtime>::CampaignFailed
             );
@@ -506,7 +513,7 @@ fn claim_campaign_fundraise_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -517,7 +524,7 @@ fn claim_campaign_fundraise_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -532,28 +539,28 @@ fn claim_campaign_fundraise_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 50_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 50_000
             ));
            
@@ -561,7 +568,7 @@ fn claim_campaign_fundraise_works() {
             System::set_block_number(41);
             assert_ok!(LaunchPad::claim_campaign_fundraise(
                 Origin::signed(ALICE),
-                TEST,
+                0,
             ));
         });
 }
@@ -573,7 +580,7 @@ fn claim_campaign_fundraise_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -584,7 +591,7 @@ fn claim_campaign_fundraise_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -599,15 +606,15 @@ fn claim_campaign_fundraise_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
@@ -615,13 +622,13 @@ fn claim_campaign_fundraise_does_not_work() {
             LaunchPad::on_initialize(23);
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 10_000
             ));
 
@@ -630,13 +637,13 @@ fn claim_campaign_fundraise_does_not_work() {
 
             assert_ok!(LaunchPad::claim_campaign_fundraise(
                 Origin::signed(ALICE),
-                TEST,
+                0,
             ));
             
             assert_noop!(
                 LaunchPad::claim_campaign_fundraise(
                     Origin::signed(CHARLIE),
-                    TEST,
+                    0,
                 ),
                 Error::<Runtime>::WrongOrigin
             );
@@ -650,7 +657,7 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -661,7 +668,7 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -676,15 +683,15 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
                 is_ended: false,
                 is_claimed: true,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
@@ -692,13 +699,13 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
             LaunchPad::on_initialize(23);
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 10_000
             ));
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 10_000
             ));
 
@@ -708,7 +715,7 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
             assert_noop!(
                 LaunchPad::claim_campaign_fundraise(
                     Origin::signed(BOB),
-                    TEST,
+                    0,
                 ),
                 Error::<Runtime>::CampaignAlreadyClaimed
             );
@@ -722,7 +729,7 @@ fn approve_proposal_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -733,7 +740,7 @@ fn approve_proposal_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -748,22 +755,22 @@ fn approve_proposal_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 10_000
             ));
         });
@@ -776,7 +783,7 @@ fn approve_proposal_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -787,7 +794,7 @@ fn approve_proposal_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -802,23 +809,23 @@ fn approve_proposal_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_noop!(
                 LaunchPad::approve_proposal(
                     Origin::signed(11),
-                    TEST,
+                    0,
                 ),
                 Error::<Runtime>::ProposalAlreadyApproved
             );
             assert_noop!(
                 LaunchPad::approve_proposal(
                     Origin::signed(11),
-                    SETUSD,
+                    2,
                 ),
                 Error::<Runtime>::ProposalNotFound
             );
@@ -832,10 +839,10 @@ fn reject_proposal_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 1,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
-                pool: LaunchPad::campaign_pool(0),
+                pool: LaunchPad::campaign_pool(1),
                 raise_currency: SETUSD,
                 sale_token: TEST,
                 token_price: 10,
@@ -843,7 +850,7 @@ fn reject_proposal_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -858,19 +865,19 @@ fn reject_proposal_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(1, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(1),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::reject_proposal(
                 Origin::signed(11),
-                TEST,
+                1,
             ));
         });
 }
-
+ 
 #[test]
 fn reject_proposal_does_not_work() {
     ExtBuilder::default()
@@ -878,7 +885,7 @@ fn reject_proposal_does_not_work() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -889,7 +896,7 @@ fn reject_proposal_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -904,23 +911,23 @@ fn reject_proposal_does_not_work() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_noop!(
                 LaunchPad::reject_proposal(
                     Origin::signed(11),
-                    TEST,
+                    0,
                 ),
                 Error::<Runtime>::ProposalAlreadyApproved
             );
             assert_noop!(
                 LaunchPad::reject_proposal(
                     Origin::signed(11),
-                    SETUSD,
+                    2,
                 ),
                 Error::<Runtime>::ProposalNotFound
             );
@@ -934,7 +941,7 @@ fn get_contributors_count_works() {
         .build()
         .execute_with(|| {
             let proposal = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -945,7 +952,7 @@ fn get_contributors_count_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -960,104 +967,36 @@ fn get_contributors_count_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, proposal.clone());
+            <Proposals<Runtime>>::insert(0, proposal.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Proposal should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 10_000
             ));
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(BOB),
-                TEST,
+                0,
                 10_000
             ));
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(CHARLIE),
-                TEST,
+                0,
                 10_000
             ));
             
-            assert_eq!(LaunchPad::get_contributors_count(TEST), 3);
-        });
-}
-
-#[test]
-fn get_total_amounts_raised_works() {
-    ExtBuilder::default()
-        .one_hundred_thousand_for_all()
-        .build()
-        .execute_with(|| {
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![]
-            );
-            let campaign = CampaignInfo {
-                id: TEST,
-                origin: ALICE.clone(),
-                beneficiary: BOB,
-                pool: LaunchPad::campaign_pool(0),
-                raise_currency: SETUSD,
-                sale_token: TEST,
-                token_price: 10,
-                crowd_allocation: 10_000,
-                goal: 100_000,
-                raised: 0,
-                contributors_count: 0,
-                contributions: Vec::new(),
-                period: 20,
-                campaign_start: 21,
-                campaign_end: 0,
-                campaign_retirement_period: 0,
-                proposal_retirement_period: 0,
-                is_approved: false,
-                is_rejected: false,
-                is_waiting: true,
-                is_active: true,
-                is_successful: false,
-                is_failed: false,
-                is_ended: false,
-                is_claimed: false,
-            };
-            <Proposals<Runtime>>::insert(TEST, campaign.clone());
-            assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
-                "Campaign should be in storage"
-            );
-            
-            assert_ok!(LaunchPad::approve_proposal(
-                Origin::signed(11),
-                TEST,
-            ));
-            
-            LaunchPad::on_initialize(21);
-
-            assert_ok!(LaunchPad::contribute(
-                Origin::signed(ALICE),
-                TEST,
-                50_000
-            ));
-
-            LaunchPad::on_initialize(40);
-
-            assert_ok!(LaunchPad::on_successful_campaign(<frame_system::Pallet<Runtime>>::block_number(), TEST));
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![
-                    (SETUSD, 50000),
-                ]
-            );
+            assert_eq!(LaunchPad::get_contributors_count(0), 3);
         });
 }
 
@@ -1067,12 +1006,8 @@ fn on_retire_works() {
         .one_hundred_thousand_for_all()
         .build()
         .execute_with(|| {
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![]
-            );
             let campaign = CampaignInfo {
-                id: TEST,
+                id: 0,
                 origin: ALICE.clone(),
                 beneficiary: BOB,
                 pool: LaunchPad::campaign_pool(0),
@@ -1083,7 +1018,7 @@ fn on_retire_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -1098,27 +1033,27 @@ fn on_retire_works() {
                 is_ended: false,
                 is_claimed: false,
             };
-            <Proposals<Runtime>>::insert(TEST, campaign.clone());
+            <Proposals<Runtime>>::insert(0, campaign.clone());
             assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
+                <Proposals<Runtime>>::contains_key(0),
                 "Campaign should be in storage"
             );
             
             assert_ok!(LaunchPad::approve_proposal(
                 Origin::signed(11),
-                TEST,
+                0,
             ));
             
             LaunchPad::on_initialize(21);
 
             assert_ok!(LaunchPad::contribute(
                 Origin::signed(ALICE),
-                TEST,
+                0,
                 50_000
             ));
 
             LaunchPad::on_initialize(60);
 
-            assert_ok!(LaunchPad::on_retire(TEST));
+            assert_ok!(LaunchPad::on_retire(0));
         });
 }

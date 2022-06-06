@@ -62,7 +62,7 @@ debug:
 
 .PHONY: run
 run:
-	RUST_BACKTRACE=1 cargo run --manifest-path node/Cargo.toml --features with-ethereum-compatibility  -- --dev --tmp
+	RUST_BACKTRACE=1 cargo run --manifest-path node/Cargo.toml  -- --dev --tmp
 
 .PHONY: log
 log:

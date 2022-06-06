@@ -33,6 +33,7 @@ mod launchpad_crowdsales {
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
+	pub const MaxLocks: u32 = 100;
 }
 
 impl frame_system::Config for Runtime {
@@ -75,7 +76,7 @@ impl orml_tokens::Config for Runtime {
 	type WeightInfo = ();
 	type ExistentialDeposits = ExistentialDeposits;
 	type OnDust = ();
-	type MaxLocks = ();
+	type MaxLocks = MaxLocks;
 	type DustRemovalWhitelist = ();
 }
 

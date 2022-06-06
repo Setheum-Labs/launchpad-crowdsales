@@ -5,6 +5,9 @@
 use super::*;
 use frame_support::{assert_noop, assert_ok};
 use mock::*;
+use sp_std::{
+	collections::btree_map::BTreeMap,
+};
 
 #[test]
 fn proposal_info_works() {
@@ -24,7 +27,7 @@ fn proposal_info_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -59,7 +62,7 @@ fn proposal_info_works() {
                     goal: 100_000,
                     raised: 0,
                     contributors_count: 0,
-                    contributions: vec![],
+                    contributions: BTreeMap::new(),
                     period: 20,
                     campaign_start: 0,
                     campaign_end: 0,
@@ -96,7 +99,7 @@ fn campaign_info_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 20,
                 campaign_end: 0,
@@ -139,7 +142,7 @@ fn campaign_info_works() {
                     goal: 100_000,
                     raised: 0,
                     contributors_count: 0,
-                    contributions: vec![],
+                    contributions: BTreeMap::new(),
                     period: 20,
                     campaign_start: 20,
                     campaign_end: 40,
@@ -173,6 +176,10 @@ fn make_proposal_works() {
                 10_000,
                 100_000,
                 20
+            ));
+            assert_ok!(LaunchPad::approve_proposal(
+                Origin::signed(11),
+                TEST,
             ));
         });
 }
@@ -243,7 +250,7 @@ fn contribute_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -319,7 +326,7 @@ fn contribute_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -381,7 +388,7 @@ fn claim_contribution_allocation_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -448,7 +455,7 @@ fn claim_contribution_allocation_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -517,7 +524,7 @@ fn claim_campaign_fundraise_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -584,7 +591,7 @@ fn claim_campaign_fundraise_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -661,7 +668,7 @@ fn claim_campaign_fundraise_does_not_work_already_claimed() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 0,
                 campaign_end: 0,
@@ -733,7 +740,7 @@ fn approve_proposal_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -787,7 +794,7 @@ fn approve_proposal_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -843,7 +850,7 @@ fn reject_proposal_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -889,7 +896,7 @@ fn reject_proposal_does_not_work() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -945,7 +952,7 @@ fn get_contributors_count_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,
@@ -994,83 +1001,11 @@ fn get_contributors_count_works() {
 }
 
 #[test]
-fn get_total_amounts_raised_works() {
-    ExtBuilder::default()
-        .one_hundred_thousand_for_all()
-        .build()
-        .execute_with(|| {
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![]
-            );
-            let campaign = CampaignInfo {
-                id: TEST,
-                origin: ALICE.clone(),
-                beneficiary: BOB,
-                pool: LaunchPad::campaign_pool(0),
-                raise_currency: SETUSD,
-                sale_token: TEST,
-                token_price: 10,
-                crowd_allocation: 10_000,
-                goal: 100_000,
-                raised: 0,
-                contributors_count: 0,
-                contributions: Vec::new(),
-                period: 20,
-                campaign_start: 21,
-                campaign_end: 0,
-                campaign_retirement_period: 0,
-                proposal_retirement_period: 0,
-                is_approved: false,
-                is_rejected: false,
-                is_waiting: true,
-                is_active: true,
-                is_successful: false,
-                is_failed: false,
-                is_ended: false,
-                is_claimed: false,
-            };
-            <Proposals<Runtime>>::insert(TEST, campaign.clone());
-            assert!(
-                <Proposals<Runtime>>::contains_key(TEST),
-                "Campaign should be in storage"
-            );
-            
-            assert_ok!(LaunchPad::approve_proposal(
-                Origin::signed(11),
-                TEST,
-            ));
-            
-            LaunchPad::on_initialize(21);
-
-            assert_ok!(LaunchPad::contribute(
-                Origin::signed(ALICE),
-                TEST,
-                50_000
-            ));
-
-            LaunchPad::on_initialize(40);
-
-            assert_ok!(LaunchPad::on_successful_campaign(<frame_system::Pallet<Runtime>>::block_number(), TEST));
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![
-                    (SETUSD, 50000),
-                ]
-            );
-        });
-}
-
-#[test]
 fn on_retire_works() {
     ExtBuilder::default()
         .one_hundred_thousand_for_all()
         .build()
         .execute_with(|| {
-            assert_eq!(
-                LaunchPad::get_total_amounts_raised(),
-                vec![]
-            );
             let campaign = CampaignInfo {
                 id: TEST,
                 origin: ALICE.clone(),
@@ -1083,7 +1018,7 @@ fn on_retire_works() {
                 goal: 100_000,
                 raised: 0,
                 contributors_count: 0,
-                contributions: Vec::new(),
+                contributions: BTreeMap::new(),
                 period: 20,
                 campaign_start: 21,
                 campaign_end: 0,

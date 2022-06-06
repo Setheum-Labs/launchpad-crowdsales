@@ -98,9 +98,13 @@ pub use authority::AuthorityConfigImpl;
 pub use constants::{fee::*, time::*};
 use primitives::evm::EthereumTransactionMessage;
 pub use primitives::{
-	evm::EstimateResourcesRequest, AccountId, AccountIndex, Amount, AuctionId, AuthoritysOriginId, Balance, BlockNumber, CurrencyId,
+	evm::EstimateResourcesRequest, AccountId, AccountIndex, Amount, AuctionId, AuthoritysOriginId, Balance, BlockNumber, CampaignId, CurrencyId,
 	DataProviderId, EraIndex, Hash, Moment, Nonce, ReserveIdentifier, Share, Signature, TokenSymbol, TradingPair, SerpStableCurrencyId,
 };
+
+use primitives::CampaignInfo;
+// use module_support::{Proposal, CampaignManager};
+
 // use module_support::Web3SettersClubAccounts;
 pub use runtime_common::{
 	BlockLength, BlockWeights, GasToWeight, OffchainSolutionWeightLimit,
@@ -271,7 +275,7 @@ pub const BABE_GENESIS_EPOCH_CONFIG: sp_consensus_babe::BabeEpochConfiguration =
 parameter_types! {
 	pub const Version: RuntimeVersion = VERSION;
 	pub const BlockHashCount: BlockNumber = 4800; // 4hrs
-	pub const SS58Prefix: u8 = 149;
+	pub const SS58Prefix: u8 = 42;
 }
 
 impl frame_system::Config for Runtime {
@@ -1184,7 +1188,7 @@ parameter_types! {
 	// existential deposit to 0 or check for other tokens on account pruning
 	pub NativeTokenExistentialDeposit: Balance = 1 * dollar(SETM); // 1 SETM
 	pub MaxNativeTokenExistentialDeposit: Balance = 100 * dollar(SETM); // 100 SETM
-	pub const MaxLocks: u32 = 50;
+	pub const MaxLocks: u32 = 100;
 	pub const MaxReserves: u32 = ReserveIdentifier::Count as u32;
 }
 
@@ -1914,6 +1918,21 @@ impl_runtime_apis! {
 			// defined our key owner proof type as a bottom type (i.e. a type
 			// with no values).
 			None
+		}
+	}
+
+	impl launchpad_crowdsales_rpc_runtime_api::LaunchPadApi<
+		Block,
+		AccountId,
+		Balance,
+		BlockNumber,
+	> for Runtime {
+		fn get_proposals() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>> {
+			LaunchPad::all_proposals()
+		}
+
+		fn get_campaigns() -> Vec<CampaignInfo<AccountId, Balance, BlockNumber>> {
+			LaunchPad::all_campaigns()
 		}
 	}
 

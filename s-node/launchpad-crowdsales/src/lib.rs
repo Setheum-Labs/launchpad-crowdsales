@@ -16,12 +16,12 @@ use frame_support::{
 };
 use frame_system::{pallet_prelude::*, ensure_signed};
 
-use orml_traits::{GetByKey, MultiCurrency, MultiLockableCurrency, LockIdentifier};
+use orml_traits::{GetByKey, MultiCurrency, MultiCurrencyExtended, MultiLockableCurrency, LockIdentifier};
 use primitives::{Balance, CampaignId, CampaignInfo, CurrencyId};
 use support::{CampaignManager, Proposal};
 
 use sp_std::{
-	vec::Vec,
+	collections::btree_map::BTreeMap, vec::Vec,
 };
 use sp_runtime::{traits::{AccountIdConversion, Zero}, DispatchResult};
 
@@ -33,8 +33,9 @@ pub use module::*;
 pub use weights::WeightInfo;
 
 pub(crate) type BalanceOf<T> = <<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::Balance;
-pub(crate) type CurrencyIdOf<T> =
+type CurrencyIdOf<T> =
 	<<T as Config>::MultiCurrency as MultiCurrency<<T as frame_system::Config>::AccountId>>::CurrencyId;
+
 pub(crate) type CampaignInfoOf<T> =
 	CampaignInfo<<T as frame_system::Config>::AccountId, BalanceOf<T>, <T as frame_system::Config>::BlockNumber>;
 
@@ -48,13 +49,14 @@ pub mod module {
 	pub trait Config: frame_system::Config {
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
 
-		/// The Currency for managing assets related to the SERP (Setheum Elastic Reserve Protocol).
-		type MultiCurrency: MultiLockableCurrency<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
+		/// The Currency for managing assets.
+		type MultiCurrency: MultiLockableCurrency<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>
+			+ MultiCurrencyExtended<Self::AccountId, CurrencyId = CurrencyId, Balance = Balance>;
 
 		#[pallet::constant]
 		/// Native currency_id.
 		/// 
-		type GetNativeCurrencyId: Get<CurrencyIdOf<Self>>;
+		type GetNativeCurrencyId: Get<CurrencyId>;
 
 		/// The Campaign Commission rate taken from successful campaigns
 		/// The Treasury Commission is transferred to the Network's Treasury account.
@@ -71,11 +73,11 @@ pub mod module {
 		/// The minimum amount that must be raised in a crowdsales campaign.
         /// Campaign Goal must be at least this amount.
 		/// If this amount is not met, the proposal can be updated by the proposer or will be rejected.
-		type MinRaise: GetByKey<CurrencyIdOf<Self>, BalanceOf<Self>>;
+		type MinRaise: GetByKey<CurrencyId, BalanceOf<Self>>;
 
 		/// The minimum amount that may be contributed into a crowdfund - by currency_id.
 		/// Should almost certainly be at least ExistentialDeposit.
-		type MinContribution: GetByKey<CurrencyIdOf<Self>, BalanceOf<Self>>;
+		type MinContribution: GetByKey<CurrencyId, BalanceOf<Self>>;
 
 		/// The maximum number of proposals that could be running at any given time.
 		/// If set to 0, proposals are disabled and the Module will panic if a proposal is made.
@@ -144,6 +146,8 @@ pub mod module {
 		GoalBelowMinimumRaise,
 		/// The Submission Deposit Funds are insufficient
 		InsufficientBalance,
+		/// Cannot set lock onsubmission deposit and transfer campaign deposit
+		UnableToCreateCampaign,
 		/// Wrong Currency Type in use.
 		InvalidCurrencyType,
 		/// The fund index specified does not exist.
@@ -175,56 +179,67 @@ pub mod module {
 	#[pallet::metadata(T::AccountId = "AccountId", BalanceOf<T> = "Balance", CurrencyIdOf<T> = "CurrencyId")]
 	pub enum Event<T: Config> {
 		/// Created Proposal \[currency_id\]
-		CreatedProposal(CurrencyIdOf<T>, CampaignInfoOf<T>),
+		NewProposal(CampaignId),
+		/// Created Proposal \[currency_id\]
+		CreatedProposal(CampaignId, CampaignInfoOf<T>),
 		/// Contributed to a campaign \[contributor, currency_id, amount\]
-		Contributed(T::AccountId, CurrencyIdOf<T>, BalanceOf<T>),
+		Contributed(T::AccountId, CampaignId, BalanceOf<T>),
 		/// Claim contribution allocation \[contributor, currency_id, amount\]
-		ClaimedContributionAlloc(T::AccountId, CurrencyIdOf<T>, BalanceOf<T>),
+		ClaimedContributionAlloc(T::AccountId, CampaignId, BalanceOf<T>),
 		/// Claimed Funds Raised \[claimant_account_id, currency_id, amount_claimed\]
-		ClaimedFundraise(T::AccountId, CurrencyIdOf<T>, BalanceOf<T>),
+		ClaimedFundraise(T::AccountId, CampaignId, BalanceOf<T>),
 		/// Rejected Proposal \[currency_id\]
-		RejectedProposal(CurrencyIdOf<T>),
+		RejectedProposal(CampaignId, CampaignInfoOf<T>),
 		/// Approved Proposal \[currency_id\]
-		ApprovedProposal(CurrencyIdOf<T>),
+		ApprovedProposal(CampaignId, CampaignInfoOf<T>),
 		/// Activated Campaign \[currency_id\]
-		ActivatedCampaign(CurrencyIdOf<T>),
+		ActivatedCampaign(CampaignId, CampaignInfoOf<T>),
 		/// Campaign Started \[currency_id\]
-		StartedCampaign(CurrencyIdOf<T>),
+		StartedCampaign(CampaignId),
 		/// Ended Campaign Successfully \[currency_id, campaign_info\]
-		EndedCampaignSuccessful(CurrencyIdOf<T>),
+		EndedCampaignSuccessful(CampaignId),
 		/// Ended Campaign Unsuccessfully \[currency_id, campaign_info\]
-		EndedCampaignUnsuccessful(CurrencyIdOf<T>),
+		EndedCampaignUnsuccessful(CampaignId),
 		/// Contributed to Campaign \[currency_id, contribution_amount\]
-		ContributedToCampaign(CurrencyIdOf<T>, BalanceOf<T>),
+		ContributedToCampaign(CampaignId, BalanceOf<T>),
 		/// Claimed Contribution Allocation \[claimant_account_id, currency_id, allocation_claimed\]
-		ClaimedAllocation(T::AccountId, CurrencyIdOf<T>, BalanceOf<T>),
+		ClaimedAllocation(T::AccountId, CampaignId, BalanceOf<T>),
 		/// Dissolved Unclaimed Funds \[amount, currency_id, now\]
-		DissolvedFunds(BalanceOf<T>, CurrencyIdOf<T>, <T as frame_system::Config>::BlockNumber),
+		DissolvedFunds(BalanceOf<T>, CampaignId, <T as frame_system::Config>::BlockNumber),
 		/// Dispensed Commissions \[amount, currency_id, now\]
-		DispensedCommissions(BalanceOf<T>, CurrencyIdOf<T>, <T as frame_system::Config>::BlockNumber),
+		DispensedCommissions(BalanceOf<T>, CampaignId, <T as frame_system::Config>::BlockNumber),
 	}
 	
 	/// Info on all of the proposed campaigns.
 	///
-	/// map CurrencyId => CampaignInfo
+	/// map CampaignId => CampaignInfo<T>
 	#[pallet::storage]
 	#[pallet::getter(fn proposals)]
-	pub type Proposals<T: Config> = StorageMap<_, Blake2_128Concat, CurrencyIdOf<T>, CampaignInfoOf<T>, OptionQuery>;
+	pub type Proposals<T: Config> = StorageMap<_, Blake2_128Concat, CampaignId, CampaignInfoOf<T>, OptionQuery>;
 	
 	/// Info on all of the approved campaigns.
 	///
-	/// map CurrencyId => CampaignInfo
+	/// map CampaignId => CampaignInfo<T>
 	#[pallet::storage]
 	#[pallet::getter(fn campaigns)]
-	pub type Campaigns<T: Config> = StorageMap<_, Blake2_128Concat, CurrencyIdOf<T>, CampaignInfoOf<T>, OptionQuery>;
+	pub type Campaigns<T: Config> = StorageMap<_, Blake2_128Concat, CampaignId, CampaignInfoOf<T>, OptionQuery>;
 
 	// Track the next campaign id to be used.
 	#[pallet::storage]
 	#[pallet::getter(fn campaign_index)]
 	pub type CampaignsIndex<T: Config> = StorageValue<_, CampaignId, ValueQuery>;
 
-	// Track the number of simultaneous Active Campaigns - ActiveCampaignsCount
+	/// Track the number of Proposals
+	#[pallet::storage]
+	#[pallet::getter(fn proposals_count)]
+	pub type ProposalsCount<T: Config> = StorageValue<_, u32, ValueQuery>;
 
+	/// Track the number of Campaigns
+	#[pallet::storage]
+	#[pallet::getter(fn campaigns_count)]
+	pub type CampaignsCount<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	// Track the number of simultaneous Active Campaigns - ActiveCampaignsCount
 	#[pallet::storage]
 	#[pallet::getter(fn active_campaigns_count)]
 	pub type ActiveCampaignsCount<T: Config> = StorageValue<_, u32, ValueQuery>;
@@ -337,6 +352,7 @@ pub mod module {
 				goal,
 				period,
 			)?;
+			
 			Ok(())
 		}
 
@@ -345,7 +361,7 @@ pub mod module {
 		#[transactional]
 		pub fn contribute(
 			origin: OriginFor<T>,
-			id: CurrencyIdOf<T>,
+			id: CampaignId,
 			contribution_amount: BalanceOf<T>,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
@@ -364,7 +380,7 @@ pub mod module {
 		#[transactional]
 		pub fn claim_contribution_allocation(
 			origin: OriginFor<T>,
-			id: CurrencyIdOf<T>,
+			id: CampaignId,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -380,7 +396,7 @@ pub mod module {
 		#[transactional]
 		pub fn claim_campaign_fundraise(
 			origin: OriginFor<T>,
-			id: CurrencyIdOf<T>,
+			id: CampaignId,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
@@ -399,15 +415,17 @@ pub mod module {
 		#[transactional]
 		pub fn approve_proposal(
 			origin: OriginFor<T>,
-			id: CurrencyIdOf<T>,
+			id: CampaignId,
 		) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
 			Self::on_approve_proposal(
 				id,
 			)?;
-			
-			Self::deposit_event(Event::ApprovedProposal(id));
+
+			let campaign: CampaignInfo<T::AccountId, Balance, T::BlockNumber>
+				= Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+			Self::deposit_event(Event::ApprovedProposal(id, campaign));
 			Ok(())
 		}
 		
@@ -416,7 +434,7 @@ pub mod module {
 		#[transactional]
 		pub fn reject_proposal(
 			origin: OriginFor<T>,
-			id: CurrencyIdOf<T>,
+			id: CampaignId,
 		) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
@@ -424,7 +442,9 @@ pub mod module {
 				id,
 			)?;
 
-			Self::deposit_event(Event::RejectedProposal(id));
+			let proposal: CampaignInfo<T::AccountId, Balance, T::BlockNumber>
+				= Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
+			Self::deposit_event(Event::RejectedProposal(id, proposal));
 			Ok(())
 		}
 
@@ -433,7 +453,7 @@ pub mod module {
 		#[transactional]
 		pub fn activate_waiting_campaign(
 			origin: OriginFor<T>,
-			id: CurrencyIdOf<T>,
+			id: CampaignId,
 		) -> DispatchResult {
 			T::UpdateOrigin::ensure_origin(origin)?;
 
@@ -441,7 +461,9 @@ pub mod module {
 				id,
 			)?;
 
-			Self::deposit_event(Event::ActivatedCampaign(id));
+			let campaign: CampaignInfo<T::AccountId, Balance, T::BlockNumber>
+				= Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
+			Self::deposit_event(Event::ActivatedCampaign(id, campaign));
 			Ok(())
 		}
 	}
@@ -459,13 +481,33 @@ impl<T: Config> Pallet<T> {
 	pub fn campaign_pool(id: CampaignId) -> T::AccountId {
 		T::PalletId::get().into_sub_account(id)
 	}
+
+	/// Get all proposals
+	pub fn all_proposals() -> Vec<CampaignInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>> {
+		let proposals = Proposals::<T>::iter().into_iter();
+		let mut proposals_vec: Vec<CampaignInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>> = Vec::new();
+		for (_, proposal) in proposals {
+			proposals_vec.push(proposal);
+		}
+		proposals_vec
+	}
+
+	/// Get all campaigns
+	pub fn all_campaigns() -> Vec<CampaignInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>> {
+		let campaigns = Campaigns::<T>::iter().into_iter();
+		let mut campaigns_vec: Vec<CampaignInfo<T::AccountId, BalanceOf<T>, T::BlockNumber>> = Vec::new();
+		for (_, proposal) in campaigns {
+			campaigns_vec.push(proposal);
+		}
+		campaigns_vec
+	}
 }
 
 impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
-	type CurrencyId = CurrencyId;
+	type CurrencyId = CurrencyIdOf<T>;
 	
 	/// The Campaign Proposal info of `id`
-	fn proposal_info(id: Self::CurrencyId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
+	fn proposal_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		Self::proposals(id)
 	}
 
@@ -482,13 +524,13 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Create new Campaign Proposal with specific `CampaignInfo`, return the `id` of the Campaign
 	fn new_proposal(
 		origin: T::AccountId,
-		beneficiary: T::AccountId,
-		raise_currency: Self::CurrencyId,
-		sale_token: Self::CurrencyId,
-		token_price: BalanceOf<T>,
-		crowd_allocation: BalanceOf<T>,
-		goal: BalanceOf<T>,
-		period: T::BlockNumber,
+		beneficiary_acc: T::AccountId,
+		raise: Self::CurrencyId,
+		sale: Self::CurrencyId,
+		price: BalanceOf<T>,
+		crowd_alloc: BalanceOf<T>,
+		raise_goal: BalanceOf<T>,
+		campaign_period: T::BlockNumber,
 	) -> DispatchResult {
 		// Generate pool_id - overflow not managed
 		let pool_id = <CampaignsIndex<T>>::get() + 1;
@@ -496,19 +538,19 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 		// Generate the CampaignInfo structure
 		let proposal = CampaignInfo {
-			id: sale_token,
+			id: pool_id,
 			origin: origin.clone(),
-			beneficiary: beneficiary,
+			beneficiary: beneficiary_acc,
 			pool: Self::campaign_pool(pool_id),
-			raise_currency: raise_currency,
-			sale_token: sale_token,
-			token_price: token_price,
-			crowd_allocation: crowd_allocation,
-			goal: goal,
+			raise_currency: raise,
+			sale_token: sale,
+			token_price: price,
+			crowd_allocation: crowd_alloc,
+			goal: raise_goal,
 			raised: Zero::zero(),
 			contributors_count: Zero::zero(),
-			contributions: Vec::new(),
-			period: period,
+			contributions: BTreeMap::new(),
+			period: campaign_period,
 			campaign_start: Zero::zero(),
 			campaign_end: Zero::zero(),
 			campaign_retirement_period: Zero::zero(),
@@ -525,28 +567,32 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 
 		// try checks
 		let try_set_lock = T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &origin, T::SubmissionDeposit::get()).is_ok();
-		let try_make_transfer = T::MultiCurrency::transfer(sale_token, &origin, &Self::campaign_pool(pool_id), crowd_allocation).is_ok() ;
+		let try_make_transfer = T::MultiCurrency::transfer(proposal.sale_token, &origin, &Self::campaign_pool(pool_id), proposal.crowd_allocation).is_ok() ;
 
 		if T::MultiCurrency::free_balance(T::GetNativeCurrencyId::get(), &origin) >= T::SubmissionDeposit::get() &&
-			T::MultiCurrency::free_balance(sale_token, &origin) >= crowd_allocation {
+			T::MultiCurrency::free_balance(proposal.sale_token, &origin) >= proposal.crowd_allocation {
 				if try_set_lock && try_make_transfer {
 					// set lock
 					T::MultiCurrency::set_lock(LAUNCHPAD_LOCK_ID, T::GetNativeCurrencyId::get(), &origin, T::SubmissionDeposit::get()).unwrap();
 					// make transfer
-					T::MultiCurrency::transfer(sale_token, &origin, &Self::campaign_pool(pool_id), crowd_allocation).unwrap();
+					T::MultiCurrency::transfer(proposal.sale_token, &origin, &Self::campaign_pool(pool_id), proposal.crowd_allocation).unwrap();
 					// insert proposal
-					<Proposals<T>>::insert(sale_token, proposal.clone());
+					<Proposals<T>>::insert(pool_id, proposal.clone());
+					// add proposal count
+					<ProposalsCount<T>>::mutate(|n| *n += 1);
+				} else {
+					return Err(Error::<T>::UnableToCreateCampaign.into());
 				}
 		} else {
 			return Err(Error::<T>::InsufficientBalance.into());
 		}
-		
-		Self::deposit_event(Event::CreatedProposal(sale_token, proposal.clone()));
+		// emit event
+		Self::deposit_event(Event::CreatedProposal(pool_id, proposal.clone()));
 		Ok(())
 	}
 
     /// Approve Proposal by `id` at `now`.
-    fn on_approve_proposal(id: Self::CurrencyId)-> sp_std::result::Result<(), DispatchError> {
+    fn on_approve_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
 		// Tag the proposal and ensure it is not already approved.
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		ensure!(!proposal.is_approved, Error::<T>::ProposalAlreadyApproved);
@@ -566,11 +612,13 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 		<Campaigns<T>>::insert(id, proposal);
 		// Active Campaigns count - overflow not managed
 		<ActiveCampaignsCount<T>>::put(<ActiveCampaignsCount<T>>::get() + 1);
+		// add campaigns count
+		<CampaignsCount<T>>::mutate(|n| *n += 1);
 		Ok(())
 	}
 	
 	/// Reject Proposal by `id` and remove from storage.
-	fn on_reject_proposal(id: Self::CurrencyId)-> sp_std::result::Result<(), DispatchError> {
+	fn on_reject_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
 		// Check that the Proposal exists and tag it
 		let mut proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		// Ensure that the proposal is not already approved
@@ -585,7 +633,7 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Remove proposal from storage by `id`
-	fn remove_proposal(id: Self::CurrencyId)-> sp_std::result::Result<(), DispatchError> {
+	fn remove_proposal(id: CampaignId)-> sp_std::result::Result<(), DispatchError> {
 		// Check that the Proposal exists and tag it
 		let proposal = Self::proposals(id).ok_or(Error::<T>::ProposalNotFound)?;
 		// Ensure that the proposal is not already approved
@@ -607,10 +655,10 @@ impl<T: Config> Proposal<T::AccountId, T::BlockNumber> for Pallet<T> {
 }
 
 impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
-	type CurrencyId = CurrencyId;
+	type CurrencyId = CurrencyIdOf<T>;
 
 	/// The Campaign info of `id`
-	fn campaign_info(id: Self::CurrencyId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
+	fn campaign_info(id: CampaignId) -> Option<CampaignInfo<T::AccountId, Balance, T::BlockNumber>> {
 		Self::campaigns(id)
 	}
 
@@ -627,7 +675,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Called when a contribution is received.
 	fn on_contribution(
 		who: T::AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 		amount: BalanceOf<T>,
 	) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
@@ -653,7 +701,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 			let mut found = false;
 			// if campaign.contributions exists, check for who's contribution
 			
-			for (contributor, contribution, allocation, _) in campaign.contributions.iter_mut() {
+			for (contributor, (contribution, allocation, _)) in campaign.contributions.iter_mut() {
 				if contributor == &who {
 
 					found = true;
@@ -664,7 +712,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 				break;
 			}
 			if !found {
-				campaign.contributions.push((who, amount, allocated, false));
+				campaign.contributions.insert(who, (amount, allocated, false));
 				campaign.raised += amount;
 			}
 
@@ -680,19 +728,19 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Called when a contribution allocation is claimed
 	fn on_claim_allocation(
 		who: T::AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 	) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		let  campaign_p = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
 		// Check if the contributor exists in the contributions of the campaign, if not return error
-		ensure!(campaign.contributions.iter().any(|(contributor, _, _, _)| *contributor == who), Error::<T>::ContributionNotFound);
+		ensure!(campaign.contributions.iter().any(|(contributor, (_, _, _))| *contributor == who), Error::<T>::ContributionNotFound);
 
 		// Ensure campaign is successfully ended
 		Self::ensure_successfully_ended_campaign(id)?;
 
 		// Check if the contributor exists and transfer allocated from pool to contributor
-		for (contributor, _, allocation, claimed) in campaign.contributions.iter_mut() {
+		for (contributor, (_, allocation, claimed)) in campaign.contributions.iter_mut() {
 			let transfer_allocation = T::MultiCurrency::transfer(campaign.sale_token, &campaign.pool, &who, *allocation).is_ok();
 
 			if contributor == &who && *claimed == false && transfer_allocation {
@@ -701,7 +749,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 				// complete claim by adding campaign update to storage
 				<Campaigns<T>>::insert(id, campaign);
 
-				for (contributor_p, _, allocation_p, claimed_p) in campaign_p.contributions.iter() {
+				for (contributor_p, (_, allocation_p, claimed_p)) in campaign_p.contributions.iter() {
 					if contributor_p == &who && *claimed_p == false {		
 						// transfer allocation
 						T::MultiCurrency::transfer(campaign_p.sale_token, &campaign_p.pool, &who, *allocation_p).unwrap();
@@ -720,7 +768,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Called when a campaign's raised fund is claimed
 	fn on_claim_campaign(
 		who: T::AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 	) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
@@ -757,7 +805,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	/// Called when a failed campaign is claimed by the proposer
 	fn on_claim_failed_campaign(
 		who: T::AccountId,
-		id: Self::CurrencyId,
+		id: CampaignId,
 	) -> DispatchResult {
 		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
@@ -784,7 +832,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Activate a campaign by `id`
-	fn activate_campaign(id: Self::CurrencyId) -> DispatchResult {
+	fn activate_campaign(id: CampaignId) -> DispatchResult {
 		// Ensure campaign exists
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 
@@ -797,7 +845,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Ensure campaign is Valid and Successfully Ended
-	fn ensure_successfully_ended_campaign(id: Self::CurrencyId) -> DispatchResult {
+	fn ensure_successfully_ended_campaign(id: CampaignId) -> DispatchResult {
 		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		ensure!(!campaign.is_failed, Error::<T>::CampaignFailed);
 		ensure!(campaign.is_successful, Error::<T>::CampaignFailed);
@@ -809,7 +857,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Record Successful Campaign by `id`
-	fn on_successful_campaign(now: T::BlockNumber, id: Self::CurrencyId) -> DispatchResult {
+	fn on_successful_campaign(now: T::BlockNumber, id: CampaignId) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		
 		// Set to successful and ended
@@ -828,6 +876,10 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		let success_count = <SuccessfulCampaignsCount<T>>::get() + 1;
 		<SuccessfulCampaignsCount<T>>::put(success_count);
 
+		// update active campaign count
+		let active_campaign_count = <ActiveCampaignsCount<T>>::get() - 1;
+		<ActiveCampaignsCount<T>>::put(active_campaign_count);
+
 		// Add to `TotalAmountRaised` in protocol
 		<TotalAmountRaised<T>>::mutate(campaign.raise_currency,  |total| *total += campaign.raised);
 		
@@ -837,7 +889,7 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Record Failed Campaign by `id`
-	fn on_failed_campaign(now: T::BlockNumber, id: Self::CurrencyId) -> DispatchResult {
+	fn on_failed_campaign(now: T::BlockNumber, id: CampaignId) -> DispatchResult {
 		let mut campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		
 		// Set to failed and ended
@@ -852,12 +904,16 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 		
 		// Update campaign storage
 		<Campaigns<T>>::insert(id, campaign);
+
+		// update active campaign count
+		let active_campaign_count = <ActiveCampaignsCount<T>>::get() - 1;
+		<ActiveCampaignsCount<T>>::put(active_campaign_count);
 		Ok(())
 	}
 
 	/// Called when pool is retired
 	/// Only unsuccessful pools are retired
-	fn on_retire(id: Self::CurrencyId) -> DispatchResult {
+	fn on_retire(id: CampaignId) -> DispatchResult {
 		// Get campaign in tag
 		let campaign = Self::campaigns(id).ok_or(Error::<T>::CampaignNotFound)?;
 		// Get accounts in tag
@@ -881,16 +937,8 @@ impl<T: Config> CampaignManager<T::AccountId, T::BlockNumber> for Pallet<T> {
 	}
 
 	/// Get amount of contributors/contributions in a campaign
-	fn get_contributors_count(id: Self::CurrencyId) -> u32 {
+	fn get_contributors_count(id: CampaignId) -> u32 {
 		let campaign = Self::campaigns(id).unwrap();
 		campaign.contributions.len() as u32
-	}
-
-	/// Get the total_amounts_raised for all currencies from `TotalAmountRaised`
-	fn get_total_amounts_raised() -> Vec<(Self::CurrencyId, BalanceOf<T>)> {
-		let total_amounts_raised: Vec<(Self::CurrencyId, BalanceOf<T>)> = <TotalAmountRaised<T>>::iter()
-			.into_iter()
-			.collect::<Vec<(Self::CurrencyId, BalanceOf<T>)>>();
-		total_amounts_raised
 	}
 }
